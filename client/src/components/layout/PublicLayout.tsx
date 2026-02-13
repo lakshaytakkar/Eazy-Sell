@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Calculator, LayoutDashboard, LogIn, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -17,28 +17,21 @@ export function PublicLayout({ children }: PublicLayoutProps) {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/">
-            <a className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold font-display text-xl">
-                E
-              </div>
-              <span className="font-display font-bold text-xl tracking-tight text-foreground">
-                Eazy to Sell
-              </span>
-            </a>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold font-display text-xl">
+              E
+            </div>
+            <span className="font-display font-bold text-xl tracking-tight text-foreground">
+              Eazy to Sell
+            </span>
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/">
-              <a className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}>
-                Home
-              </a>
+            <Link href="/" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`}>
+              Home
             </Link>
-            <Link href="/roi-calculator">
-              <a className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/roi-calculator') ? 'text-primary' : 'text-muted-foreground'}`}>
-                ROI Estimator
-              </a>
+            <Link href="/roi-calculator" className={`text-sm font-medium transition-colors hover:text-primary ${isActive('/roi-calculator') ? 'text-primary' : 'text-muted-foreground'}`}>
+              ROI Estimator
             </Link>
             <div className="flex items-center gap-2 ml-4">
               <Link href="/login">
@@ -50,7 +43,6 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             </div>
           </nav>
 
-          {/* Mobile Nav */}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon">
@@ -59,12 +51,8 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="flex flex-col gap-4 mt-8">
-                <Link href="/">
-                  <a className="text-lg font-medium">Home</a>
-                </Link>
-                <Link href="/roi-calculator">
-                  <a className="text-lg font-medium">ROI Estimator</a>
-                </Link>
+                <Link href="/" className="text-lg font-medium">Home</Link>
+                <Link href="/roi-calculator" className="text-lg font-medium">ROI Estimator</Link>
                 <div className="h-px bg-border my-2" />
                 <Link href="/login">
                   <Button className="w-full">Log In / Sign Up</Button>
@@ -97,18 +85,18 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             <div>
               <h4 className="font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/"><a className="hover:text-foreground">Home</a></Link></li>
-                <li><Link href="/roi-calculator"><a className="hover:text-foreground">ROI Calculator</a></Link></li>
-                <li><Link href="/login"><a className="hover:text-foreground">Partner Login</a></Link></li>
+                <li><Link href="/" className="hover:text-foreground">Home</Link></li>
+                <li><Link href="/roi-calculator" className="hover:text-foreground">ROI Calculator</Link></li>
+                <li><Link href="/login" className="hover:text-foreground">Partner Login</Link></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">About Us</a></li>
-                <li><a href="#" className="hover:text-foreground">Contact</a></li>
-                <li><a href="#" className="hover:text-foreground">Terms of Service</a></li>
+                <li><span className="hover:text-foreground cursor-pointer">About Us</span></li>
+                <li><span className="hover:text-foreground cursor-pointer">Contact</span></li>
+                <li><span className="hover:text-foreground cursor-pointer">Terms of Service</span></li>
               </ul>
             </div>
 

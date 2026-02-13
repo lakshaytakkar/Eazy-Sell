@@ -150,7 +150,7 @@ export function AppSidebar({ userType }: { userType: 'admin' | 'client' }) {
           <SidebarMenuItem>
             <Link href="/login">
                 <SidebarMenuButton
-                className="h-9 text-[14px] font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-md"
+                className="h-9 text-[14px] font-medium text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md"
                 >
                 <LogOut className="h-[18px] w-[18px]" />
                 <span>Logout</span>
