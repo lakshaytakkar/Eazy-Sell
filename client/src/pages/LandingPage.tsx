@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight } from "lucide-react";
+import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight, ChevronLeft } from "lucide-react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
 import storeInterior1 from "@/assets/images/store-interior-1.png";
 import shelvesCloseup from "@/assets/images/shelves-closeup.png";
@@ -101,6 +102,92 @@ function formatINR(amount: number): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
+function QuickFilterCarousel({ filters }: { filters: { label: string; image: string }[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [checkScroll]);
+
+  const scroll = (direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = direction === "left" ? -280 : 280;
+    el.scrollBy({ left: amount, behavior: "smooth" });
+  };
+
+  return (
+    <section className="py-10 bg-background border-b" data-testid="section-quick-filters">
+      <div className="container mx-auto px-4 max-w-6xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-bold font-display">Browse by Collection</h3>
+            <p className="text-sm text-muted-foreground">Curated product tags for every retail niche</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scroll("left")}
+              disabled={!canScrollLeft}
+              className="h-9 w-9 rounded-full border flex items-center justify-center bg-background shadow-sm transition-opacity disabled:opacity-30"
+              aria-label="Scroll left"
+              data-testid="button-filter-scroll-left"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => scroll("right")}
+              disabled={!canScrollRight}
+              className="h-9 w-9 rounded-full border flex items-center justify-center bg-background shadow-sm transition-opacity disabled:opacity-30"
+              aria-label="Scroll right"
+              data-testid="button-filter-scroll-right"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
+        >
+          {filters.map((filter) => (
+            <div
+              key={filter.label}
+              className="flex flex-col items-center gap-2.5 shrink-0 cursor-pointer snap-start"
+              data-testid={`filter-${filter.label.toLowerCase().replace(/\s/g, "-")}`}
+            >
+              <div className="h-24 w-24 md:h-28 md:w-28 rounded-full overflow-hidden border border-border shadow-md">
+                <img
+                  src={filter.image}
+                  alt={filter.label}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-xs md:text-sm font-semibold text-muted-foreground whitespace-nowrap">{filter.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPage() {
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -181,34 +268,7 @@ export default function LandingPage() {
       </section>
 
       {/* Quick Filter Carousel */}
-      <section className="py-10 bg-background border-b" data-testid="section-quick-filters">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold font-display">Browse by Collection</h3>
-              <p className="text-sm text-muted-foreground">Curated product tags for every retail niche</p>
-            </div>
-          </div>
-          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-            {quickFilters.map((filter) => (
-              <div
-                key={filter.label}
-                className="flex flex-col items-center gap-2 shrink-0 cursor-pointer group snap-start"
-                data-testid={`filter-${filter.label.toLowerCase().replace(/\s/g, "-")}`}
-              >
-                <div className="h-18 w-18 md:h-22 md:w-22 rounded-full overflow-hidden border-3 border-muted shadow-md">
-                  <img
-                    src={filter.image}
-                    alt={filter.label}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="text-xs md:text-sm font-semibold text-muted-foreground whitespace-nowrap">{filter.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <QuickFilterCarousel filters={quickFilters} />
 
       {/* Product Showcase - Teaser with Locked Prices */}
       <section className="py-20 bg-muted/30" data-testid="section-product-showcase">
