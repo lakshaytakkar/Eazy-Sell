@@ -1,0 +1,197 @@
+Build a professional web portal for Eazy-to-Sell that serves two audiences:
+
+Admin (internal team):
+
+Manage products and categories
+
+Manage clients and their stage pipeline
+
+Review partner “Launch Kits”
+
+Maintain pricing settings (can be basic now)
+
+Store Partner / Investor (external):
+
+Browse product catalog (see landing price, suggested MRP, margin)
+
+Build an opening inventory “Launch Kit”
+
+Track store launch progress (simple timeline)
+
+Use ROI estimator (simple, interactive)
+
+We are building UI experience first with sample/mock data. Logic can be improved later.
+
+KEY RULES
+
+Professional UI only (no emojis).
+
+No popup animations, no flashy transitions.
+
+Mobile-first. Investors will open from WhatsApp on phone.
+
+Clean, retail-friendly catalog + dashboard feel.
+
+PAGES
+Public (no login)
+
+Landing Page
+
+Hero: “Build Your Own Value Retail Store”
+
+Key highlights: investment range, timeline, what we provide
+
+CTA: Login / Register
+
+ROI Estimator (Public)
+
+Interactive sliders/inputs
+
+Outputs: monthly revenue, expenses, profit, breakeven, ROI
+
+Simple chart (bar or line)
+
+Login / Register
+
+Client Portal (login)
+
+Client Dashboard
+
+“Your store: City — Current Stage”
+
+Progress bar + stage timeline
+
+Next action required (single line)
+
+Payment summary (Paid / Total / Balance)
+
+Assigned manager card with WhatsApp link
+
+Product Catalog
+
+Grid cards with: image, name, category badge, tags
+
+Show prominently:
+
+“Your Cost” (landing price)
+
+“Sell At” (suggested MRP range)
+
+“Margin” (₹ and %)
+
+Filters (required):
+
+Landing price band
+
+MRP band
+
+Category
+
+Tags (bestseller, new, recommended, seasonal, high margin)
+
+Sort: price, margin%, newest
+
+Top stats bar: total products, average margin, under-99 count, high-margin count
+
+My Launch Kit
+
+Table of selected products + quantity input per item
+
+Running totals:
+
+total SKUs, total units, total investment, estimated MRP value, average margin
+
+Category mix visualization
+
+Budget target input and progress indicator
+
+“Submit Kit for Review” button
+
+My Store
+
+Location details section
+
+Design section (placeholder card for 3D design / layout image)
+
+Payments
+
+Milestones list (token, post-design, pre-production, pre-shipping)
+
+Payment history list/table
+
+Support
+
+WhatsApp quick link + simple message form (optional)
+
+Admin Panel (login)
+
+Admin Dashboard
+
+Cards: total clients, stage counts, pending kit reviews, payments collected, pending payments
+
+Client Management
+
+Kanban board by stages:
+Lead → Token Paid → Location Shared → Location Approved → 3D Design → Payment Partial → In Production → Shipped → Setup → Launched → Active
+
+Client detail drawer/page with fields (keep editable UI, mock data ok)
+
+Product Management
+
+Product list + add/edit form
+
+Bulk import UI (CSV upload UI can be stubbed)
+
+Product status: Active / Draft / Discontinued
+
+Category Management
+
+Add/edit categories
+
+Duty/GST fields can exist but logic can be placeholder for now
+
+Price Settings
+
+A simple admin settings page UI for global rates (exchange, freight, markup etc.) — can be non-functional initially
+
+Kit Reviews
+
+List of submitted kits with approve/reject + comments UI
+
+UI COMPONENT GUIDELINES
+
+Use a clean layout: left sidebar + top bar for logged-in areas
+
+Cards, tables, and forms should be consistent and readable
+
+Product cards must be “retail catalog style” with clear pricing hierarchy
+
+Use Indian currency formatting (₹1,50,000)
+
+Keep spacing generous; no clutter
+
+SEED / MOCK DATA (UI ONLY)
+
+Create sample:
+
+10 products across categories (kitchen, stationery, toys, decor, storage, bags, bathroom, cleaning, gifts)
+
+3 clients in different stages
+
+1 admin user
+
+BUILD ORDER (UI-FIRST)
+
+Public pages + auth screens (UI only)
+
+Client dashboard + catalog + launch kit UI
+
+Admin dashboard + kanban + product management UI
+
+ROI estimator UI
+
+Polish mobile responsiveness
+
+IMPORTANT
+
+Do UI and navigation first. Use mock data and placeholders where needed. Keep the data model and calculation logic minimal for now, but structure the UI so it can be wired later without redesign.
