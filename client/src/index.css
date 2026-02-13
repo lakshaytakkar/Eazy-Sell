@@ -67,18 +67,19 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
 
-  /* Deep Navy Blue for Primary Actions */
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
+  /* Deep Retail Yellow/Amber for Primary Actions */
+  /* Using Amber-500/600 range for a strong, professional look */
+  --primary: 40 96% 45%;  /* #ECA70E (Gold/Amber) */
+  --primary-foreground: 222 47% 11%; /* Dark text for contrast on yellow */
 
-  /* Soft Grey-Blue for Secondary */
+  /* Soft Grey-Blue for Secondary - keeping this neutral */
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222 47% 11.2%;
 
   --muted: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
 
-  --accent: 210 40% 96.1%;
+  --accent: 40 96% 96%; /* Very light yellow for accent backgrounds */
   --accent-foreground: 222 47% 11.2%;
 
   --destructive: 0 84.2% 60.2%;
@@ -86,7 +87,7 @@
 
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 221 83% 53%;
+  --ring: 40 96% 45%;
 
   --radius: 0.5rem;
 
@@ -116,8 +117,8 @@
   --popover: 222 47% 11%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222 47.1% 11.2%;
+  --primary: 40 96% 45%;
+  --primary-foreground: 222 47% 11%;
 
   --secondary: 217.2 32.6% 17.5%;
   --secondary-foreground: 210 40% 98%;
@@ -125,7 +126,7 @@
   --muted: 217.2 32.6% 17.5%;
   --muted-foreground: 215 20.2% 65.1%;
 
-  --accent: 217.2 32.6% 17.5%;
+  --accent: 40 96% 20%; /* Darker yellow for accent in dark mode */
   --accent-foreground: 210 40% 98%;
 
   --destructive: 0 62.8% 30.6%;
@@ -133,7 +134,7 @@
 
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --ring: 40 96% 45%;
 
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;

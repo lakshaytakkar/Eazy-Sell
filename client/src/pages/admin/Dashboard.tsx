@@ -70,7 +70,7 @@ export default function AdminDashboard() {
                 <p className="text-sm font-medium text-muted-foreground">Products</p>
                 <div className="text-3xl font-bold">256</div>
               </div>
-              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+              <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center text-primary-foreground">
                 <ShoppingBag className="h-5 w-5" />
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
                             <span className="font-bold">5</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-400 w-[40%]"></div>
+                            <div className="h-full bg-primary w-[40%]"></div>
                         </div>
                      </div>
                      <div className="space-y-1">

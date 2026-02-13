@@ -57,9 +57,9 @@ export default function MyStore() {
                  <CardTitle>Design Status</CardTitle>
               </CardHeader>
               <CardContent>
-                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900 text-center">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">3D Layout in Progress</p>
-                    <p className="text-xs text-blue-800 dark:text-blue-200 mb-4">
+                 <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 text-center">
+                    <p className="text-sm font-medium text-foreground mb-2">3D Layout in Progress</p>
+                    <p className="text-xs text-muted-foreground mb-4">
                         Our architects are designing the optimal layout for your 300 sq ft space.
                     </p>
                     <Button size="sm" variant="outline" className="bg-background">View Drafts</Button>
