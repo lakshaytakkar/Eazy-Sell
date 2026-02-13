@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Flame, Crown, Sparkles, Leaf, Baby, Gift, Heart, Box, Shield, Layers, ChevronRight } from "lucide-react";
+import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight } from "lucide-react";
 
 import storeInterior1 from "@/assets/images/store-interior-1.png";
 import shelvesCloseup from "@/assets/images/shelves-closeup.png";
@@ -26,6 +26,28 @@ import catBathroom from "@/assets/images/cat-bathroom.png";
 import catCleaning from "@/assets/images/cat-cleaning.png";
 import catGifts from "@/assets/images/cat-gifts.png";
 
+import filterHotSelling from "@/assets/images/filter-hot-selling.png";
+import filterHighMargin from "@/assets/images/filter-high-margin.png";
+import filterBestseller from "@/assets/images/filter-bestseller.png";
+import filterNewArrivals from "@/assets/images/filter-new-arrivals.png";
+import filterEcoFriendly from "@/assets/images/filter-eco-friendly.png";
+import filterKids from "@/assets/images/filter-kids.png";
+import filterGifting from "@/assets/images/filter-gifting.png";
+import filterLuxury from "@/assets/images/filter-luxury.png";
+import filterEssentials from "@/assets/images/filter-essentials.png";
+import filterDurable from "@/assets/images/filter-durable.png";
+
+import prodWaterBottles from "@/assets/images/prod-water-bottles.png";
+import prodStorageBins from "@/assets/images/prod-storage-bins.png";
+import prodDeskOrganizer from "@/assets/images/prod-desk-organizer.png";
+import prodBuildingBlocks from "@/assets/images/prod-building-blocks.png";
+import prodCeramicVases from "@/assets/images/prod-ceramic-vases.png";
+import prodToteBags from "@/assets/images/prod-tote-bags.png";
+import prodBathroomSet from "@/assets/images/prod-bathroom-set.png";
+import prodCleaningCloths from "@/assets/images/prod-cleaning-cloths.png";
+import prodCandleSet from "@/assets/images/prod-candle-set.png";
+import prodLunchBox from "@/assets/images/prod-lunch-box.png";
+
 import type { Product, Category } from "@shared/schema";
 
 const categoryImages: Record<string, string> = {
@@ -40,17 +62,30 @@ const categoryImages: Record<string, string> = {
   Gifts: catGifts,
 };
 
+const productImages: Record<number, string> = {
+  1: prodWaterBottles,
+  2: prodStorageBins,
+  3: prodDeskOrganizer,
+  4: prodBuildingBlocks,
+  5: prodCeramicVases,
+  6: prodToteBags,
+  7: prodBathroomSet,
+  8: prodCleaningCloths,
+  9: prodCandleSet,
+  10: prodLunchBox,
+};
+
 const quickFilters = [
-  { label: "Hot Selling", icon: Flame, color: "bg-red-500", textColor: "text-red-600" },
-  { label: "High Margin", icon: TrendingUp, color: "bg-green-500", textColor: "text-green-600" },
-  { label: "Bestseller", icon: Crown, color: "bg-amber-500", textColor: "text-amber-600" },
-  { label: "New Arrivals", icon: Sparkles, color: "bg-blue-500", textColor: "text-blue-600" },
-  { label: "Eco Friendly", icon: Leaf, color: "bg-emerald-500", textColor: "text-emerald-600" },
-  { label: "Kids", icon: Baby, color: "bg-pink-500", textColor: "text-pink-600" },
-  { label: "Gifting", icon: Gift, color: "bg-purple-500", textColor: "text-purple-600" },
-  { label: "Luxury", icon: Heart, color: "bg-rose-500", textColor: "text-rose-600" },
-  { label: "Essentials", icon: Box, color: "bg-cyan-500", textColor: "text-cyan-600" },
-  { label: "Durable", icon: Shield, color: "bg-slate-500", textColor: "text-slate-600" },
+  { label: "Hot Selling", image: filterHotSelling },
+  { label: "High Margin", image: filterHighMargin },
+  { label: "Bestseller", image: filterBestseller },
+  { label: "New Arrivals", image: filterNewArrivals },
+  { label: "Eco Friendly", image: filterEcoFriendly },
+  { label: "Kids", image: filterKids },
+  { label: "Gifting", image: filterGifting },
+  { label: "Luxury", image: filterLuxury },
+  { label: "Essentials", image: filterEssentials },
+  { label: "Durable", image: filterDurable },
 ];
 
 function getMarginMultiplier(costPrice: number, mrp: number): string {
@@ -154,17 +189,21 @@ export default function LandingPage() {
               <p className="text-sm text-muted-foreground">Curated product tags for every retail niche</p>
             </div>
           </div>
-          <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
             {quickFilters.map((filter) => (
               <div
                 key={filter.label}
                 className="flex flex-col items-center gap-2 shrink-0 cursor-pointer group snap-start"
                 data-testid={`filter-${filter.label.toLowerCase().replace(/\s/g, "-")}`}
               >
-                <div className={`h-16 w-16 md:h-20 md:w-20 rounded-full ${filter.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 group-hover:shadow-xl`}>
-                  <filter.icon className="h-7 w-7 md:h-8 md:w-8 text-white" />
+                <div className="h-18 w-18 md:h-22 md:w-22 rounded-full overflow-hidden border-3 border-muted shadow-md">
+                  <img
+                    src={filter.image}
+                    alt={filter.label}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <span className="text-xs md:text-sm font-semibold text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">{filter.label}</span>
+                <span className="text-xs md:text-sm font-semibold text-muted-foreground whitespace-nowrap">{filter.label}</span>
               </div>
             ))}
           </div>
@@ -197,16 +236,15 @@ export default function LandingPage() {
             {(products.length > 0 ? products.slice(0, 8) : []).map((product) => {
               const marginMultiplier = getMarginMultiplier(product.costPrice, product.mrp);
               const marginPercent = Math.round(((product.mrp - product.costPrice) / product.mrp) * 100);
+              const localImage = productImages[product.id];
               return (
-                <Card key={product.id} className="overflow-hidden border hover:shadow-xl transition-all duration-300 group" data-testid={`product-card-${product.id}`}>
+                <Card key={product.id} className="overflow-hidden border shadow-sm" data-testid={`product-card-${product.id}`}>
                   <div className="relative aspect-square overflow-hidden bg-muted">
-                    {product.image && (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    )}
+                    <img
+                      src={localImage || product.image || ""}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
                     <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
                       <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 font-bold shadow-md">
                         {marginMultiplier} Margin
@@ -257,7 +295,7 @@ export default function LandingPage() {
                 <Lock className="h-4 w-4 mr-2" /> Sign Up to Unlock Full Catalog & Prices
               </Button>
             </Link>
-            <p className="text-xs text-muted-foreground mt-3">35,000+ products across 9 categories. Partner pricing revealed after sign-up.</p>
+            <p className="text-xs text-muted-foreground mt-3">35,000+ products across multiple categories. Partner pricing revealed after sign-up.</p>
           </div>
         </div>
       </section>
@@ -267,7 +305,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-14">
             <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Product Categories</Badge>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">9 Categories, Endless Possibilities</h2>
+            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Categories for Every Store</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
               From kitchen essentials to luxury gifting — curate the perfect product mix for your store's target audience.
             </p>
@@ -279,20 +317,20 @@ export default function LandingPage() {
               return (
                 <div
                   key={cat.id}
-                  className={`relative rounded-2xl overflow-hidden group cursor-pointer ${isLarge ? "col-span-2 row-span-2" : "col-span-1 row-span-1"}`}
+                  className={`relative rounded-2xl overflow-hidden cursor-pointer ${isLarge ? "col-span-2 row-span-2" : "col-span-1 row-span-1"}`}
                   data-testid={`category-tile-${cat.name.toLowerCase()}`}
                 >
                   <img
                     src={cat.image}
                     alt={cat.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
                     <h3 className={`text-white font-bold ${isLarge ? "text-xl md:text-2xl" : "text-sm md:text-base"}`} data-testid={`text-category-name-${cat.id}`}>{cat.name}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-white/70 text-xs md:text-sm" data-testid={`text-category-count-${cat.id}`}>{cat.count > 0 ? `${cat.count}+ products` : "Coming soon"}</span>
-                      <ChevronRight className="h-3 w-3 text-white/50 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="h-3 w-3 text-white/50" />
                     </div>
                   </div>
                   {isLarge && (
@@ -338,10 +376,10 @@ export default function LandingPage() {
               { value: "1 Box", label: "Minimum Order", sub: "No bulk commitment", icon: Package },
               { value: "35K+", label: "SKUs Available", sub: "Build your own mix", icon: Layers },
               { value: "100%", label: "Quality Checked", sub: "Factory inspected", icon: Shield },
-              { value: "9+", label: "Categories", sub: "Endless variety", icon: Store },
+              { value: "Multi", label: "Categories", sub: "Endless variety", icon: Store },
               { value: "5x-20x", label: "Profit Margins", sub: "Direct sourcing", icon: TrendingUp },
             ].map((item) => (
-              <div key={item.label} className="text-center p-4 rounded-xl bg-background/5 hover:bg-background/10 transition-colors" data-testid={`conv-usp-${item.label.toLowerCase().replace(/\s/g, "-")}`}>
+              <div key={item.label} className="text-center p-4 rounded-xl bg-background/5" data-testid={`conv-usp-${item.label.toLowerCase().replace(/\s/g, "-")}`}>
                 <item.icon className="h-6 w-6 text-primary mx-auto mb-2" />
                 <div className="text-2xl md:text-3xl font-display font-bold text-primary mb-1">{item.value}</div>
                 <p className="text-sm font-semibold text-background/90">{item.label}</p>
@@ -364,8 +402,8 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[220px] md:auto-rows-[260px]">
-            <div className="col-span-2 row-span-2 relative rounded-2xl overflow-hidden group cursor-pointer" data-testid="bento-store-interior">
-              <img src={storeInterior1} alt="Beautiful store interior" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="col-span-2 row-span-2 relative rounded-2xl overflow-hidden" data-testid="bento-store-interior">
+              <img src={storeInterior1} alt="Beautiful store interior" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 <Badge className="bg-primary text-primary-foreground mb-2">Turnkey Stores</Badge>
@@ -374,32 +412,32 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden group cursor-pointer" data-testid="bento-shelves">
-              <img src={shelvesCloseup} alt="Organized shelves" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-shelves">
+              <img src={shelvesCloseup} alt="Organized shelves" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Curated Product Displays</p>
               </div>
             </div>
 
-            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden group cursor-pointer" data-testid="bento-warehouse">
-              <img src={warehouse} alt="Warehouse operations" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-warehouse">
+              <img src={warehouse} alt="Warehouse operations" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Supply Chain Handled</p>
               </div>
             </div>
 
-            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden group cursor-pointer" data-testid="bento-lifestyle">
-              <img src={storeInterior2} alt="Lifestyle store" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-lifestyle">
+              <img src={storeInterior2} alt="Lifestyle store" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Lifestyle Brands</p>
               </div>
             </div>
 
-            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden group cursor-pointer" data-testid="bento-launch-kit">
-              <img src={launchKitPackage} alt="Launch kit package" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-launch-kit">
+              <img src={launchKitPackage} alt="Launch kit package" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Opening Inventory Kit</p>
@@ -523,7 +561,7 @@ export default function LandingPage() {
                 iconColor: "text-yellow-600",
               },
             ].map((item) => (
-              <Card key={item.step} className={`${item.color} border hover:shadow-lg transition-all duration-300 group`} data-testid={`step-card-${item.step}`}>
+              <Card key={item.step} className={`${item.color} border`} data-testid={`step-card-${item.step}`}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-4xl font-display font-bold text-muted-foreground/20">{item.step}</span>
@@ -584,7 +622,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="overflow-hidden border hover:shadow-xl transition-shadow" data-testid="story-card-1">
+            <Card className="overflow-hidden border" data-testid="story-card-1">
               <div className="grid sm:grid-cols-5 h-full">
                 <div className="sm:col-span-2 h-64 sm:h-auto">
                   <img src={partner1} alt="Rahul Sharma" className="w-full h-full object-cover" />
@@ -614,7 +652,7 @@ export default function LandingPage() {
               </div>
             </Card>
 
-            <Card className="overflow-hidden border hover:shadow-xl transition-shadow" data-testid="story-card-2">
+            <Card className="overflow-hidden border" data-testid="story-card-2">
               <div className="grid sm:grid-cols-5 h-full">
                 <div className="sm:col-span-2 h-64 sm:h-auto">
                   <img src={partner2} alt="Priya Patel" className="w-full h-full object-cover" />
