@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation } from "wouter";
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function LoginPage() {
   const [_, setLocation] = useLocation();
@@ -12,7 +11,6 @@ export default function LoginPage() {
 
   const handleLogin = (role: 'client' | 'admin') => {
     setIsLoading(true);
-    // Simulate login delay
     setTimeout(() => {
       setIsLoading(false);
       if (role === 'client') {
@@ -25,9 +23,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left Side - Hero/Showcase */}
+      {/* Left Side - Hero */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 bg-zinc-900 text-white overflow-hidden">
-        {/* Abstract Background */}
         <div className="absolute inset-0 z-0 opacity-40">
            <img 
             src="/auth-pattern.png" 
@@ -38,119 +35,81 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xl">
-            E
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white font-bold text-xl">
+            ETS
           </div>
         </div>
 
         <div className="relative z-10 max-w-lg space-y-6">
           <blockquote className="space-y-4">
-            <p className="text-2xl font-medium leading-relaxed font-display">
-              "Eazy to Sell gave us the blueprint to launch our store in just 25 days. The inventory support is a game changer."
+            <p className="text-3xl font-medium leading-tight font-sans tracking-tight">
+              "The most comprehensive platform for retail entrepreneurs. Launching my store was effortless."
             </p>
             <footer className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-white/20" />
               <div>
                 <div className="font-semibold">Rahul Sharma</div>
-                <div className="text-sm text-zinc-400">Owner, Jaipur Branch</div>
+                <div className="text-sm text-zinc-400">Jaipur Partner</div>
               </div>
             </footer>
           </blockquote>
-          
-          <div className="pt-8 flex gap-6 text-sm font-medium text-zinc-400">
-             <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary" /> Verified Suppliers
-             </div>
-             <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary" /> Secure Payments
-             </div>
-          </div>
         </div>
       </div>
 
       {/* Right Side - Form */}
       <div className="flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-[400px] space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
-          <div className="space-y-2 text-center lg:text-left">
-            <h1 className="text-3xl font-display font-bold tracking-tight text-foreground">Welcome back</h1>
-            <p className="text-muted-foreground">
-              Enter your credentials to access your dashboard.
+        <div className="w-full max-w-[380px] space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Sign in to your account</h1>
+            <p className="text-muted-foreground text-sm">
+              Enter your details to access the portal.
             </p>
           </div>
 
-          <Tabs defaultValue="partner" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="partner">Partner</TabsTrigger>
-              <TabsTrigger value="admin">Admin</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="partner" className="space-y-6">
-              <div className="space-y-4">
+          <div className="space-y-6">
+             <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="email">Email or Phone</Label>
                   <Input 
-                    id="phone" 
-                    placeholder="+91 98765 43210" 
-                    className="h-11 bg-muted/30" 
+                    id="email" 
+                    placeholder="name@example.com" 
+                    className="h-10" 
                   />
                 </div>
                 <div className="space-y-2">
                    <div className="flex items-center justify-between">
-                      <Label htmlFor="otp">OTP Code</Label>
-                      <a href="#" className="text-xs text-primary hover:underline font-medium">Resend OTP?</a>
+                      <Label htmlFor="password">Password / OTP</Label>
+                      <a href="#" className="text-xs text-primary hover:underline font-medium">Forgot?</a>
                    </div>
                   <Input 
-                    id="otp" 
-                    placeholder="• • • •" 
-                    className="h-11 bg-muted/30 tracking-widest" 
-                  />
-                </div>
-              </div>
-              <Button 
-                className="w-full h-11 text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" 
-                onClick={() => handleLogin('client')} 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                    <span className="flex items-center gap-2">Verifying <span className="animate-pulse">...</span></span>
-                ) : (
-                    <span className="flex items-center gap-2">Secure Login <ArrowRight className="h-4 w-4" /></span>
-                )}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="admin" className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="name@company.com" 
-                    className="h-11 bg-muted/30" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
                     id="password" 
-                    type="password" 
-                    className="h-11 bg-muted/30" 
+                    type="password"
+                    placeholder="••••••••" 
+                    className="h-10" 
                   />
                 </div>
-              </div>
-              <Button 
-                className="w-full h-11 text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" 
-                onClick={() => handleLogin('admin')} 
-                disabled={isLoading}
-              >
-                {isLoading ? 'Authenticating...' : 'Sign In'}
-              </Button>
-            </TabsContent>
-          </Tabs>
+             </div>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Interested in starting a store? <a href="#" className="font-medium text-primary hover:underline">Apply Now</a>
+             <div className="space-y-3">
+                 <Button 
+                    className="w-full h-10 font-medium" 
+                    onClick={() => handleLogin('client')} 
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Verifying...' : 'Sign In as Partner'}
+                </Button>
+                <Button 
+                    variant="outline"
+                    className="w-full h-10 font-medium" 
+                    onClick={() => handleLogin('admin')} 
+                    disabled={isLoading}
+                >
+                    Admin Login
+                </Button>
+             </div>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground">
+            By clicking continue, you agree to our <a href="#" className="underline">Terms of Service</a> and <a href="#" className="underline">Privacy Policy</a>.
           </p>
         </div>
       </div>
