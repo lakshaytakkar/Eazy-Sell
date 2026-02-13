@@ -2,50 +2,60 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, FileText, User } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { toast } from "@/hooks/use-toast";
+import type { LaunchKitSubmission, Client } from "@shared/schema";
 
 export default function KitReviews() {
-  // Mock pending reviews
-  const pendingReviews = [
-    {
-       id: 1,
-       client: "Rahul Sharma",
-       store: "Jaipur Store",
-       date: "Feb 12, 2024",
-       totalItems: 450,
-       totalValue: 525000,
-       budgetUtilization: 105,
-       items: [
-         { name: "Premium Glass Water Bottle Set", qty: 50 },
-         { name: "Stackable Storage Bins", qty: 20 },
-         { name: "Others...", qty: 380 }
-       ]
+  const { data: submissions = [], isLoading } = useQuery<LaunchKitSubmission[]>({
+    queryKey: ["/api/submissions"],
+  });
+
+  const { data: clients = [] } = useQuery<Client[]>({
+    queryKey: ["/api/clients"],
+  });
+
+  const clientMap = Object.fromEntries(clients.map(c => [c.id, c]));
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      await apiRequest("PATCH", `/api/submissions/${id}`, { status });
     },
-    {
-       id: 2,
-       client: "Priya Patel",
-       store: "Ahmedabad Store",
-       date: "Feb 10, 2024",
-       totalItems: 380,
-       totalValue: 480000,
-       budgetUtilization: 96,
-       items: [
-         { name: "Bamboo Bathroom Set", qty: 30 },
-         { name: "Canvas Tote Bag", qty: 100 },
-         { name: "Others...", qty: 250 }
-       ]
-    }
-  ];
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
+      toast({ title: "Updated", description: "Submission status updated." });
+    },
+  });
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+  }
+
+  const pendingSubmissions = submissions.filter(s => s.status === "pending");
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-bold">Launch Kit Reviews</h1>
+        <h1 className="text-3xl font-display font-bold" data-testid="text-reviews-title">Launch Kit Reviews</h1>
         <p className="text-muted-foreground">Approve or reject inventory plans submitted by partners.</p>
       </div>
 
+      {pendingSubmissions.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground" data-testid="text-empty-reviews">No pending reviews.</div>
+      )}
+
       <div className="grid gap-6">
-        {pendingReviews.map((review) => (
-          <Card key={review.id}>
+        {pendingSubmissions.map((submission) => {
+          const client = clientMap[submission.clientId];
+          const clientName = client?.name || `Client #${submission.clientId}`;
+          const clientCity = client?.city || "";
+          const budget = submission.budget ?? 500000;
+          const totalInvestment = submission.totalInvestment ?? 0;
+          const budgetUtilization = budget > 0 ? Math.round((totalInvestment / budget) * 100) : 0;
+
+          return (
+          <Card key={submission.id} data-testid={`card-review-${submission.id}`}>
             <CardHeader>
                <div className="flex justify-between items-start">
                   <div className="flex gap-4">
@@ -53,12 +63,12 @@ export default function KitReviews() {
                         <FileText className="h-6 w-6" />
                      </div>
                      <div>
-                        <CardTitle>{review.client}</CardTitle>
-                        <CardDescription>{review.store} • Submitted on {review.date}</CardDescription>
+                        <CardTitle data-testid={`text-review-client-${submission.id}`}>{clientName}</CardTitle>
+                        <CardDescription>{clientCity ? `${clientCity} Store • ` : ""}Submitted {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString() : "N/A"}</CardDescription>
                      </div>
                   </div>
-                  <Badge variant={review.budgetUtilization > 100 ? "destructive" : "secondary"}>
-                     {review.budgetUtilization}% of Budget
+                  <Badge variant={budgetUtilization > 100 ? "destructive" : "secondary"} data-testid={`badge-budget-${submission.id}`}>
+                     {budgetUtilization}% of Budget
                   </Badge>
                </div>
             </CardHeader>
@@ -66,35 +76,29 @@ export default function KitReviews() {
                 <div className="grid md:grid-cols-3 gap-6">
                    <div className="p-4 bg-muted/30 rounded-lg space-y-2">
                       <p className="text-sm text-muted-foreground">Total Investment</p>
-                      <p className="text-2xl font-bold">₹{review.totalValue.toLocaleString()}</p>
+                      <p className="text-2xl font-bold" data-testid={`text-investment-${submission.id}`}>₹{totalInvestment.toLocaleString()}</p>
                    </div>
                    <div className="p-4 bg-muted/30 rounded-lg space-y-2">
                       <p className="text-sm text-muted-foreground">Total Units</p>
-                      <p className="text-2xl font-bold">{review.totalItems}</p>
+                      <p className="text-2xl font-bold" data-testid={`text-units-${submission.id}`}>{submission.totalUnits ?? 0}</p>
                    </div>
-                   <div className="p-4 bg-muted/30 rounded-lg space-y-1">
-                      <p className="text-sm text-muted-foreground mb-2">Key Items</p>
-                      <ul className="text-sm space-y-1">
-                         {review.items.map((item, idx) => (
-                             <li key={idx} className="flex justify-between">
-                                <span>{item.name}</span>
-                                <span className="font-medium text-muted-foreground">x{item.qty}</span>
-                             </li>
-                         ))}
-                      </ul>
+                   <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                      <p className="text-sm text-muted-foreground">Budget</p>
+                      <p className="text-2xl font-bold">₹{budget.toLocaleString()}</p>
                    </div>
                 </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-3 bg-muted/10 p-4">
-                <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
+                <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10" onClick={() => updateMutation.mutate({ id: submission.id, status: "rejected" })} disabled={updateMutation.isPending} data-testid={`button-reject-${submission.id}`}>
                     <X className="h-4 w-4 mr-2" /> Reject & Request Changes
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700">
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => updateMutation.mutate({ id: submission.id, status: "approved" })} disabled={updateMutation.isPending} data-testid={`button-approve-${submission.id}`}>
                     <Check className="h-4 w-4 mr-2" /> Approve Order
                 </Button>
             </CardFooter>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

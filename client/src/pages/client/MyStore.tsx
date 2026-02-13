@@ -2,26 +2,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Building, CheckCircle2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Client } from "@shared/schema";
 
 export default function MyStore() {
+  const { data: client, isLoading } = useQuery<Client>({
+    queryKey: ["/api/clients/1"],
+  });
+
+  if (isLoading || !client) {
+    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+  }
+
+  const stages = ['Lead', 'Token Paid', 'Location Shared', 'Location Approved', '3D Design', 'Payment Partial', 'In Production', 'Shipped', 'Setup', 'Launched'];
+  const currentStageIndex = stages.indexOf(client.stage);
+
   const steps = [
-    { title: "Token Payment", date: "Jan 15, 2024", status: "completed", desc: "Initial commitment amount received." },
-    { title: "Location Finalization", date: "Feb 01, 2024", status: "completed", desc: "Store location approved by admin." },
-    { title: "3D Design & Layout", date: "Feb 10, 2024", status: "current", desc: "Architectural drawings in progress." },
-    { title: "Inventory Selection", date: "Pending", status: "pending", desc: "Finalize your Launch Kit." },
-    { title: "Production & Shipping", date: "Pending", status: "pending", desc: "Materials dispatched to site." },
-    { title: "Grand Opening", date: "Target: Mar 15", status: "pending", desc: "Store launch event." },
+    { title: "Token Payment", date: currentStageIndex >= 1 ? "Completed" : "Pending", status: currentStageIndex >= 1 ? "completed" : currentStageIndex === 0 ? "current" : "pending", desc: "Initial commitment amount received." },
+    { title: "Location Finalization", date: currentStageIndex >= 3 ? "Completed" : "Pending", status: currentStageIndex >= 3 ? "completed" : (currentStageIndex >= 1 && currentStageIndex < 3) ? "current" : "pending", desc: "Store location approved by admin." },
+    { title: "3D Design & Layout", date: currentStageIndex >= 4 ? "Completed" : "Pending", status: currentStageIndex >= 4 ? "completed" : currentStageIndex === 4 ? "current" : (currentStageIndex === 3 ? "current" : "pending"), desc: "Architectural drawings in progress." },
+    { title: "Inventory Selection", date: currentStageIndex >= 5 ? "Completed" : "Pending", status: currentStageIndex >= 5 ? "completed" : currentStageIndex === 4 ? "current" : "pending", desc: "Finalize your Launch Kit." },
+    { title: "Production & Shipping", date: currentStageIndex >= 7 ? "Completed" : "Pending", status: currentStageIndex >= 7 ? "completed" : (currentStageIndex >= 5 && currentStageIndex < 7) ? "current" : "pending", desc: "Materials dispatched to site." },
+    { title: "Grand Opening", date: currentStageIndex >= 9 ? "Completed" : "Target: TBD", status: currentStageIndex >= 9 ? "completed" : currentStageIndex >= 7 ? "current" : "pending", desc: "Store launch event." },
   ];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold">My Store</h1>
+        <h1 className="text-3xl font-display font-bold" data-testid="text-store-title">My Store</h1>
         <p className="text-muted-foreground">Manage your location and track launch milestones.</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
-        {/* Left Column: Store Details */}
         <div className="space-y-6">
            <Card>
               <CardHeader>
@@ -29,24 +41,23 @@ export default function MyStore() {
               </CardHeader>
               <CardContent className="space-y-4">
                  <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
-                    {/* Placeholder for Map/Store Image */}
                     <div className="absolute inset-0 flex items-center justify-center text-muted-foreground bg-muted">
                         <Building className="h-10 w-10 opacity-20" />
                     </div>
-                    <Badge className="absolute top-2 right-2 bg-green-500 hover:bg-green-600">Location Approved</Badge>
+                    <Badge className="absolute top-2 right-2 bg-green-500 hover:bg-green-600" data-testid="badge-store-status">{client.stage}</Badge>
                  </div>
                  
                  <div className="space-y-3">
                     <div className="flex items-start gap-3">
                         <MapPin className="h-5 w-5 text-primary mt-0.5" />
                         <div>
-                            <p className="font-medium">Jaipur Main Branch</p>
-                            <p className="text-sm text-muted-foreground">Plot 45, Raja Park, Jaipur, Rajasthan</p>
+                            <p className="font-medium" data-testid="text-store-name">{client.name} - {client.city} Store</p>
+                            <p className="text-sm text-muted-foreground" data-testid="text-store-address">{client.storeAddress || "Address not set"}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-primary" />
-                        <p className="text-sm">+91 98765 43210</p>
+                        <p className="text-sm" data-testid="text-store-phone">{client.phone || "Phone not set"}</p>
                     </div>
                  </div>
               </CardContent>
@@ -58,17 +69,20 @@ export default function MyStore() {
               </CardHeader>
               <CardContent>
                  <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 text-center">
-                    <p className="text-sm font-medium text-foreground mb-2">3D Layout in Progress</p>
-                    <p className="text-xs text-muted-foreground mb-4">
-                        Our architects are designing the optimal layout for your 300 sq ft space.
+                    <p className="text-sm font-medium text-foreground mb-2" data-testid="text-design-status">
+                      {currentStageIndex >= 4 ? "3D Layout Completed" : currentStageIndex === 3 ? "3D Layout in Progress" : "Awaiting Previous Steps"}
                     </p>
-                    <Button size="sm" variant="outline" className="bg-background">View Drafts</Button>
+                    <p className="text-xs text-muted-foreground mb-4">
+                        {client.storeArea 
+                          ? `Our architects are designing the optimal layout for your ${client.storeArea} sq ft space.`
+                          : "Store area not specified yet."}
+                    </p>
+                    <Button size="sm" variant="outline" className="bg-background" data-testid="button-view-drafts">View Drafts</Button>
                  </div>
               </CardContent>
            </Card>
         </div>
 
-        {/* Right Column: Timeline */}
         <div className="md:col-span-2">
             <Card className="h-full">
                 <CardHeader>
@@ -78,7 +92,7 @@ export default function MyStore() {
                 <CardContent>
                     <div className="relative border-l-2 border-muted ml-4 space-y-8 pb-4">
                         {steps.map((step, idx) => (
-                            <div key={idx} className="pl-8 relative">
+                            <div key={idx} className="pl-8 relative" data-testid={`step-${idx}`}>
                                 <div className={`
                                     absolute -left-[9px] top-1 h-4 w-4 rounded-full border-2 
                                     ${step.status === 'completed' ? 'bg-primary border-primary' : 

@@ -3,18 +3,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Payment } from "@shared/schema";
 
 export default function ClientPayments() {
-  const payments = [
-    { id: "INV-001", date: "Jan 15, 2024", desc: "Token Amount", amount: 50000, status: "Paid", method: "Bank Transfer" },
-    { id: "INV-002", date: "Feb 10, 2024", desc: "Partial Payment (Inventory)", amount: 100000, status: "Paid", method: "UPI" },
-    { id: "INV-003", date: "Pending", desc: "Final Settlement", amount: 350000, status: "Due", method: "-" },
-  ];
+  const { data: payments = [], isLoading } = useQuery<Payment[]>({
+    queryKey: ["/api/payments/client/1"],
+  });
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+  }
+
+  const totalPaid = payments.filter(p => p.status === "Paid").reduce((sum, p) => sum + p.amount, 0);
+  const totalDue = payments.filter(p => p.status === "Due").reduce((sum, p) => sum + p.amount, 0);
+  const nextDue = payments.find(p => p.status === "Due");
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-bold">Payments</h1>
+        <h1 className="text-3xl font-display font-bold" data-testid="text-payments-title">Payments</h1>
         <p className="text-muted-foreground">Track your investment and download invoices.</p>
       </div>
 
@@ -22,22 +30,22 @@ export default function ClientPayments() {
          <Card className="bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900">
             <CardContent className="p-6">
                <p className="text-sm font-medium text-green-800 dark:text-green-300">Total Paid</p>
-               <p className="text-3xl font-bold text-green-700 dark:text-green-400 mt-2">₹1,50,000</p>
+               <p className="text-3xl font-bold text-green-700 dark:text-green-400 mt-2" data-testid="text-total-paid">₹{totalPaid.toLocaleString()}</p>
             </CardContent>
          </Card>
          <Card className="bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900">
             <CardContent className="p-6">
                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Total Due</p>
-               <p className="text-3xl font-bold text-amber-700 dark:text-amber-400 mt-2">₹3,50,000</p>
+               <p className="text-3xl font-bold text-amber-700 dark:text-amber-400 mt-2" data-testid="text-total-due">₹{totalDue.toLocaleString()}</p>
             </CardContent>
          </Card>
          <Card>
             <CardContent className="p-6 flex items-center justify-between">
                <div>
                    <p className="text-sm font-medium text-muted-foreground">Next Payment Due</p>
-                   <p className="text-lg font-bold mt-1">Mar 01, 2024</p>
+                   <p className="text-lg font-bold mt-1" data-testid="text-next-due">{nextDue ? nextDue.date : "None"}</p>
                </div>
-               <Button>Pay Now</Button>
+               <Button data-testid="button-pay-now">Pay Now</Button>
             </CardContent>
          </Card>
       </div>
@@ -47,6 +55,9 @@ export default function ClientPayments() {
             <CardTitle>Transaction History</CardTitle>
          </CardHeader>
          <CardContent>
+            {payments.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground" data-testid="text-empty-payments">No payments found.</div>
+            ) : (
             <Table>
                <TableHeader>
                   <TableRow>
@@ -61,20 +72,20 @@ export default function ClientPayments() {
                </TableHeader>
                <TableBody>
                   {payments.map((p) => (
-                     <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.id}</TableCell>
+                     <TableRow key={p.id} data-testid={`row-payment-${p.id}`}>
+                        <TableCell className="font-medium">{p.invoiceId}</TableCell>
                         <TableCell>{p.date}</TableCell>
-                        <TableCell>{p.desc}</TableCell>
-                        <TableCell>{p.method}</TableCell>
+                        <TableCell>{p.description}</TableCell>
+                        <TableCell>{p.method || "-"}</TableCell>
                         <TableCell>₹{p.amount.toLocaleString()}</TableCell>
                         <TableCell>
-                           <Badge variant={p.status === 'Paid' ? 'outline' : 'destructive'} className={p.status === 'Paid' ? "bg-green-50 text-green-700 border-green-200" : ""}>
+                           <Badge variant={p.status === 'Paid' ? 'outline' : 'destructive'} className={p.status === 'Paid' ? "bg-green-50 text-green-700 border-green-200" : ""} data-testid={`status-payment-${p.id}`}>
                               {p.status}
                            </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                            {p.status === 'Paid' && (
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" data-testid={`button-download-${p.id}`}>
                                  <Download className="h-4 w-4 mr-2" /> Invoice
                               </Button>
                            )}
@@ -83,6 +94,7 @@ export default function ClientPayments() {
                   ))}
                </TableBody>
             </Table>
+            )}
          </CardContent>
       </Card>
     </div>

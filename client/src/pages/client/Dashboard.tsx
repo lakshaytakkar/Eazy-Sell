@@ -1,33 +1,40 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CLIENTS } from "@/lib/mockData";
 import { AlertCircle, CheckCircle2, ChevronRight, Clock, MapPin, Package, Phone } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Client } from "@shared/schema";
 
 export default function ClientDashboard() {
-  const client = CLIENTS[0]; // Mock user: Rahul Sharma
-  
-  // Calculate progress based on stage index
+  const { data: client, isLoading } = useQuery<Client>({
+    queryKey: ["/api/clients/1"],
+  });
+
+  if (isLoading || !client) {
+    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+  }
+
   const stages = ['Lead', 'Token Paid', 'Location Shared', 'Location Approved', '3D Design', 'Payment Partial', 'In Production', 'Shipped', 'Setup', 'Launched'];
   const currentStageIndex = stages.indexOf(client.stage);
   const progress = ((currentStageIndex + 1) / stages.length) * 100;
 
+  const totalPaid = client.totalPaid ?? 0;
+  const totalDue = client.totalDue ?? 0;
+
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">My Store Dashboard</h1>
+          <h1 className="text-3xl font-display font-bold text-foreground" data-testid="text-dashboard-title">My Store Dashboard</h1>
           <p className="text-muted-foreground flex items-center gap-2 mt-1">
-            <MapPin className="h-4 w-4" /> {client.city} Store • <span className="text-primary font-medium">{client.stage}</span>
+            <MapPin className="h-4 w-4" /> <span data-testid="text-client-city">{client.city}</span> Store • <span className="text-primary font-medium" data-testid="text-client-stage">{client.stage}</span>
           </p>
         </div>
-        <Button className="bg-green-600 hover:bg-green-700 text-white">
+        <Button className="bg-green-600 hover:bg-green-700 text-white" data-testid="button-contact-manager">
           <Phone className="h-4 w-4 mr-2" /> Contact Manager
         </Button>
       </div>
 
-      {/* Progress Section */}
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Launch Progress</CardTitle>
@@ -37,7 +44,7 @@ export default function ClientDashboard() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm font-medium mb-1">
               <span>Stage {currentStageIndex + 1} of {stages.length}</span>
-              <span>{Math.round(progress)}% Complete</span>
+              <span data-testid="text-progress-percent">{Math.round(progress)}% Complete</span>
             </div>
             <Progress value={progress} className="h-3" />
             <div className="flex justify-between text-xs text-muted-foreground mt-2">
@@ -49,27 +56,27 @@ export default function ClientDashboard() {
         </CardContent>
       </Card>
 
-      {/* Action Required */}
-      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-4 flex items-start gap-4">
-        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5" />
-        <div>
-          <h3 className="font-semibold text-amber-900 dark:text-amber-100">Action Required</h3>
-          <p className="text-amber-800 dark:text-amber-200 text-sm mt-1">{client.nextAction}</p>
-          <Button size="sm" variant="outline" className="mt-3 border-amber-300 hover:bg-amber-100 dark:border-amber-800 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-100">
-            Complete Now <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+      {client.nextAction && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-4 flex items-start gap-4">
+          <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-amber-900 dark:text-amber-100">Action Required</h3>
+            <p className="text-amber-800 dark:text-amber-200 text-sm mt-1" data-testid="text-next-action">{client.nextAction}</p>
+            <Button size="sm" variant="outline" className="mt-3 border-amber-300 hover:bg-amber-100 dark:border-amber-800 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-100" data-testid="button-complete-now">
+              Complete Now <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Payment</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{client.totalPaid.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">of ₹{(client.totalPaid + client.totalDue).toLocaleString()} total</p>
+            <div className="text-2xl font-bold" data-testid="text-total-paid">₹{totalPaid.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">of ₹{(totalPaid + totalDue).toLocaleString()} total</p>
           </CardContent>
         </Card>
         
@@ -88,13 +95,12 @@ export default function ClientDashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Assigned Manager</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold">{client.managerName}</div>
-            <p className="text-xs text-muted-foreground mt-1">{client.managerPhone}</p>
+            <div className="text-lg font-bold" data-testid="text-manager-name">{client.managerName || "Not assigned"}</div>
+            <p className="text-xs text-muted-foreground mt-1" data-testid="text-manager-phone">{client.managerPhone || "-"}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity / Next Steps */}
       <div className="grid md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>

@@ -5,41 +5,87 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PRODUCTS } from "@/lib/mockData";
 import { Trash2, AlertCircle, ArrowRight, PieChart } from "lucide-react";
 import { useState } from "react";
 import { Cell, Pie, PieChart as RePieChart, ResponsiveContainer, Tooltip as ReTooltip } from "recharts";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { toast } from "@/hooks/use-toast";
+import type { Product, LaunchKitItem, Category } from "@shared/schema";
 
 export default function LaunchKit() {
-  // Mock Cart State
-  const [cart, setCart] = useState(
-    PRODUCTS.slice(0, 5).map(p => ({ product: p, quantity: 10 }))
-  );
   const [budget] = useState(500000);
 
-  const updateQuantity = (index: number, val: number) => {
-    const newCart = [...cart];
-    newCart[index].quantity = Math.max(0, val);
-    setCart(newCart.filter(item => item.quantity > 0));
-  };
+  const { data: kitItems = [], isLoading: kitLoading } = useQuery<LaunchKitItem[]>({
+    queryKey: ["/api/kit-items/1"],
+  });
 
-  const removeItem = (index: number) => {
-     setCart(cart.filter((_, i) => i !== index));
-  };
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
+  const { data: categoriesData = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const categoryMap = Object.fromEntries(categoriesData.map(c => [c.id, c.name]));
+  const productMap = Object.fromEntries(products.map(p => [p.id, p]));
+
+  const cart = kitItems.map(item => ({
+    kitItem: item,
+    product: productMap[item.productId],
+    quantity: item.quantity,
+  })).filter(item => item.product);
+
+  const updateQuantityMutation = useMutation({
+    mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
+      if (quantity <= 0) return;
+      await apiRequest("POST", "/api/kit-items", { clientId: 1, productId, quantity });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/kit-items/1"] });
+    },
+  });
+
+  const removeItemMutation = useMutation({
+    mutationFn: async (kitItemId: number) => {
+      await apiRequest("DELETE", `/api/kit-items/${kitItemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/kit-items/1"] });
+    },
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/submissions", {
+        clientId: 1,
+        status: "pending",
+        totalInvestment: totalInvestment,
+        totalUnits: cart.reduce((acc, item) => acc + item.quantity, 0),
+        budget: budget,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
+      toast({ title: "Kit Submitted", description: "Your launch kit has been submitted for review." });
+    },
+  });
 
   const totalInvestment = cart.reduce((acc, item) => acc + (item.product.costPrice * item.quantity), 0);
   const totalMRP = cart.reduce((acc, item) => acc + (item.product.mrp * item.quantity), 0);
   const potentialProfit = totalMRP - totalInvestment;
   const avgMargin = totalMRP > 0 ? (potentialProfit / totalMRP) * 100 : 0;
   
-  const budgetUtilization = (totalInvestment / budget) * 100;
+  const budgetUtilization = budget > 0 ? (totalInvestment / budget) * 100 : 0;
 
   const categoryData = cart.reduce((acc, item) => {
-     const found = acc.find(x => x.name === item.product.category);
+     const catName = categoryMap[item.product.categoryId] || "Other";
+     const found = acc.find(x => x.name === catName);
      if (found) {
          found.value += item.product.costPrice * item.quantity;
      } else {
-         acc.push({ name: item.product.category, value: item.product.costPrice * item.quantity });
+         acc.push({ name: catName, value: item.product.costPrice * item.quantity });
      }
      return acc;
   }, [] as {name: string, value: number}[]);
@@ -49,16 +95,20 @@ export default function LaunchKit() {
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
+  if (kitLoading) {
+    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">My Launch Kit</h1>
+          <h1 className="text-3xl font-display font-bold text-foreground" data-testid="text-kit-title">My Launch Kit</h1>
           <p className="text-muted-foreground">Review and submit your opening inventory order.</p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline">Save Draft</Button>
-            <Button>Submit for Review</Button>
+            <Button variant="outline" data-testid="button-save-draft">Save Draft</Button>
+            <Button onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending || cart.length === 0} data-testid="button-submit-review">Submit for Review</Button>
         </div>
       </div>
 
@@ -70,6 +120,9 @@ export default function LaunchKit() {
                     <CardDescription>Adjust quantities to meet your budget.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
+                    {cart.length === 0 ? (
+                      <div className="p-8 text-center text-muted-foreground" data-testid="text-empty-cart">No items in your launch kit. Browse the catalog to add products.</div>
+                    ) : (
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -81,16 +134,16 @@ export default function LaunchKit() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {cart.map((item, idx) => (
-                                <TableRow key={item.product.id}>
+                            {cart.map((item) => (
+                                <TableRow key={item.kitItem.id} data-testid={`row-kit-item-${item.kitItem.id}`}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 rounded bg-muted overflow-hidden">
-                                                <img src={item.product.image} className="h-full w-full object-cover" />
+                                                <img src={item.product.image || ""} className="h-full w-full object-cover" />
                                             </div>
                                             <div>
                                                 <div className="font-medium text-sm line-clamp-1">{item.product.name}</div>
-                                                <div className="text-xs text-muted-foreground">{item.product.category}</div>
+                                                <div className="text-xs text-muted-foreground">{categoryMap[item.product.categoryId] || "Other"}</div>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -101,17 +154,21 @@ export default function LaunchKit() {
                                     <TableCell>
                                         <Input 
                                             type="number" 
-                                            min="0"
+                                            min="1"
                                             value={item.quantity} 
-                                            onChange={(e) => updateQuantity(idx, parseInt(e.target.value) || 0)}
+                                            onChange={(e) => {
+                                              const val = parseInt(e.target.value) || 1;
+                                              updateQuantityMutation.mutate({ productId: item.product.id, quantity: val });
+                                            }}
                                             className="h-8 w-20"
+                                            data-testid={`input-quantity-${item.kitItem.id}`}
                                         />
                                     </TableCell>
                                     <TableCell className="text-right font-medium">
                                         {formatCurrency(item.product.costPrice * item.quantity)}
                                     </TableCell>
                                     <TableCell>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(idx)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItemMutation.mutate(item.kitItem.id)} data-testid={`button-remove-${item.kitItem.id}`}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </TableCell>
@@ -119,9 +176,11 @@ export default function LaunchKit() {
                             ))}
                         </TableBody>
                     </Table>
+                    )}
                 </CardContent>
             </Card>
 
+             {cart.length > 0 && (
              <Card>
                 <CardHeader>
                     <CardTitle>Category Mix</CardTitle>
@@ -148,6 +207,7 @@ export default function LaunchKit() {
                      </ResponsiveContainer>
                 </CardContent>
              </Card>
+             )}
         </div>
 
         <div className="lg:col-span-1 space-y-6">
@@ -159,7 +219,7 @@ export default function LaunchKit() {
                     <div className="space-y-2">
                          <div className="flex justify-between text-sm">
                              <span>Budget Utilization</span>
-                             <span>{Math.round(budgetUtilization)}%</span>
+                             <span data-testid="text-budget-util">{Math.round(budgetUtilization)}%</span>
                          </div>
                          <Progress value={budgetUtilization} className={budgetUtilization > 100 ? "text-destructive" : ""} />
                          <p className="text-xs text-muted-foreground">Budget: {formatCurrency(budget)}</p>
@@ -170,7 +230,7 @@ export default function LaunchKit() {
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Total Investment</span>
-                            <span className="text-xl font-bold">{formatCurrency(totalInvestment)}</span>
+                            <span className="text-xl font-bold" data-testid="text-total-investment">{formatCurrency(totalInvestment)}</span>
                         </div>
                         <div className="flex justify-between items-center">
                              <span className="text-muted-foreground">Total Retail Value (MRP)</span>
@@ -195,7 +255,7 @@ export default function LaunchKit() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full" size="lg">Submit Kit for Review <ArrowRight className="h-4 w-4 ml-2" /></Button>
+                    <Button className="w-full" size="lg" onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending || cart.length === 0} data-testid="button-submit-kit">Submit Kit for Review <ArrowRight className="h-4 w-4 ml-2" /></Button>
                 </CardFooter>
              </Card>
         </div>
