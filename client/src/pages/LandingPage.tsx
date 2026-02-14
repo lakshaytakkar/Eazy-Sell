@@ -371,7 +371,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[160px] md:auto-rows-[200px]">
+          <div className="grid grid-cols-2 md:grid-cols-4 grid-flow-dense gap-3 md:gap-4 auto-rows-[160px] md:auto-rows-[200px]">
             {categoryProductCounts.map((cat, idx) => {
               const isLarge = idx === 0 || idx === 4;
               return (
