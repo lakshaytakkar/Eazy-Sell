@@ -1,0 +1,618 @@
+# REPLIT UPGRADE PROMPT — Eazy-to-Sell Portal V2
+
+## CONTEXT
+
+We have an existing Next.js + Express + Supabase portal (already deployed on Replit). The codebase is at: https://github.com/lakshaytakkar/Eazy-Sell
+
+It has working pages for catalog, client management, launch kit, payments. But there are critical gaps that make it unusable for our actual business. This prompt describes ONLY the upgrades needed. Do NOT rebuild from scratch — modify the existing codebase.
+
+## TECH STACK (Already In Place — Don't Change)
+
+- Frontend: React + Vite + Tailwind + shadcn/ui
+- Backend: Express (server/routes.ts)
+- Database: Supabase (PostgreSQL)
+- Storage: server/storage.ts (Supabase queries with snake/camel conversion)
+- Schema: shared/schema.ts (Zod)
+- Routing: wouter
+- State: @tanstack/react-query
+
+---
+
+## UPGRADE 1: PRICE CALCULATOR ENGINE (HIGHEST PRIORITY)
+
+### Problem
+Currently Product only has `costPrice` (flat INR) and `mrp` (flat INR) — both manually entered. We source from China. We need the full cost chain calculated automatically from the factory price in Chinese Yuan.
+
+### New Product Schema (Replace existing)
+
+Update `shared/schema.ts` — replace the Product interface:
+
+```typescript
+export interface Product {
+  id: number;
+  name: string;
+  categoryId: number;
+  image: string | null;
+  
+  // Sourcing fields (admin enters these)
+  exwPriceYuan: number;          // Factory price in Chinese Yuan
+  unitsPerCarton: number;        // How many pieces per carton
+  cartonLengthCm: number;        // Carton dimensions
+  cartonWidthCm: number;
+  cartonHeightCm: number;
+  cartonWeightKg: number | null;
+  moq: number | null;            // Minimum order quantity
+  supplierName: string | null;
+  hsCode: string | null;         // For customs classification
+  
+  // Auto-calculated fields (computed on server, stored in DB for query performance)
+  fobPriceYuan: number | null;
+  fobPriceInr: number | null;
+  cbmPerUnit: number | null;
+  freightPerUnit: number | null;
+  cifPriceInr: number | null;
+  customsDuty: number | null;
+  swSurcharge: number | null;
+  igst: number | null;
+  totalLandedCost: number | null;    // Our cost
+  storeLandingPrice: number | null;  // What partner pays us (landed + our markup)
+  suggestedMrp: number | null;       // Nearest MRP band
+  storeMarginPercent: number | null; // Partner's margin %
+  storeMarginRs: number | null;     // Partner's margin in ₹
+  
+  tags: string[] | null;
+  status: string;  // Active | Draft | Discontinued
+}
+```
+
+### Price Calculation Logic
+
+Create a utility function `server/priceEngine.ts`:
+
+```typescript
+export interface PriceInputs {
+  exwPriceYuan: number;
+  unitsPerCarton: number;
+  cartonLengthCm: number;
+  cartonWidthCm: number;
+  cartonHeightCm: number;
+  categoryDutyPercent: number;
+  categoryIgstPercent: number;
+  // Global settings
+  exchangeRate: number;        // Yuan to INR, default 12.0
+  sourcingCommission: number;  // %, default 5
+  freightPerCbm: number;       // INR, default 8000
+  insurancePercent: number;    // %, default 0.5
+  swSurchargePercent: number;  // % of customs duty, default 10 (fixed by govt)
+  ourMarkupPercent: number;    // %, default 25
+  targetStoreMargin: number;   // %, default 50 (for MRP suggestion)
+}
+
+export function calculatePrices(inputs: PriceInputs) {
+  const fobYuan = inputs.exwPriceYuan * (1 + inputs.sourcingCommission / 100);
+  const fobInr = fobYuan * inputs.exchangeRate;
+  
+  const cbmPerCarton = (inputs.cartonLengthCm * inputs.cartonWidthCm * inputs.cartonHeightCm) / 1000000;
+  const cbmPerUnit = cbmPerCarton / inputs.unitsPerCarton;
+  const freightPerUnit = cbmPerUnit * inputs.freightPerCbm;
+  
+  const insuranceInr = fobInr * (inputs.insurancePercent / 100);
+  const cifInr = fobInr + freightPerUnit + insuranceInr;
+  
+  const customsDuty = cifInr * (inputs.categoryDutyPercent / 100);
+  const swSurcharge = customsDuty * (inputs.swSurchargePercent / 100);
+  const assessableValue = cifInr + customsDuty + swSurcharge;
+  const igst = assessableValue * (inputs.categoryIgstPercent / 100);
+  
+  const totalLandedCost = assessableValue + igst;
+  const storeLandingPrice = totalLandedCost * (1 + inputs.ourMarkupPercent / 100);
+  
+  // MRP band assignment
+  const MRP_BANDS = [29, 49, 79, 99, 129, 149, 199, 249, 299, 399, 499, 599, 799, 999];
+  const targetMrp = storeLandingPrice / (1 - inputs.targetStoreMargin / 100);
+  
+  // Find nearest band that gives at least 35% margin to store
+  let suggestedMrp = MRP_BANDS[MRP_BANDS.length - 1]; // default to highest
+  for (const band of MRP_BANDS) {
+    const margin = (band - storeLandingPrice) / band;
+    if (band >= storeLandingPrice && margin >= 0.35) {
+      suggestedMrp = band;
+      break;
+    }
+  }
+  
+  const storeMarginRs = suggestedMrp - storeLandingPrice;
+  const storeMarginPercent = (storeMarginRs / suggestedMrp) * 100;
+  
+  return {
+    fobPriceYuan: round2(fobYuan),
+    fobPriceInr: round2(fobInr),
+    cbmPerUnit: round4(cbmPerUnit),
+    freightPerUnit: round2(freightPerUnit),
+    cifPriceInr: round2(cifInr),
+    customsDuty: round2(customsDuty),
+    swSurcharge: round2(swSurcharge),
+    igst: round2(igst),
+    totalLandedCost: round2(totalLandedCost),
+    storeLandingPrice: round2(storeLandingPrice),
+    suggestedMrp,
+    storeMarginPercent: round1(storeMarginPercent),
+    storeMarginRs: round2(storeMarginRs),
+    marginWarning: storeMarginPercent < 35, // Flag if margin too low
+  };
+}
+
+function round2(n: number) { return Math.round(n * 100) / 100; }
+function round4(n: number) { return Math.round(n * 10000) / 10000; }
+function round1(n: number) { return Math.round(n * 10) / 10; }
+```
+
+### When To Recalculate
+
+- When any product is created or updated (recalc that product)
+- When any global setting changes (recalc ALL products)
+- When a category's duty/GST changes (recalc all products in that category)
+
+Create a server endpoint: `POST /api/recalculate-all` that recalculates all products.
+
+### Update Global Settings
+
+The existing `price_settings` table needs these keys with defaults:
+
+| key | value | label |
+|-----|-------|-------|
+| exchange_rate | 12.0 | Yuan to INR Exchange Rate |
+| sourcing_commission | 5 | Sourcing Commission % |
+| freight_per_cbm | 8000 | Freight Rate per CBM (INR) |
+| insurance_percent | 0.5 | Insurance % of FOB |
+| sw_surcharge_percent | 10 | Social Welfare Surcharge % |
+| our_markup_percent | 25 | Our Markup % |
+| target_store_margin | 50 | Target Store Margin % for MRP |
+
+### Update Category Schema
+
+Existing categories already have `dutyPercent` and `gstPercent` — keep these. But rename to be clearer:
+
+```typescript
+export interface Category {
+  id: number;
+  name: string;
+  customsDutyPercent: number;  // was dutyPercent
+  igstPercent: number;         // was gstPercent  
+  hsCode: string | null;       // NEW — default HS code for category
+}
+```
+
+### Supabase Migration
+
+Run this migration to update the products table:
+
+```sql
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS exw_price_yuan NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS units_per_carton INTEGER DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS carton_length_cm NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS carton_width_cm NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS carton_height_cm NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS carton_weight_kg NUMERIC,
+  ADD COLUMN IF NOT EXISTS moq INTEGER,
+  ADD COLUMN IF NOT EXISTS supplier_name TEXT,
+  ADD COLUMN IF NOT EXISTS hs_code TEXT,
+  ADD COLUMN IF NOT EXISTS fob_price_yuan NUMERIC,
+  ADD COLUMN IF NOT EXISTS fob_price_inr NUMERIC,
+  ADD COLUMN IF NOT EXISTS cbm_per_unit NUMERIC,
+  ADD COLUMN IF NOT EXISTS freight_per_unit NUMERIC,
+  ADD COLUMN IF NOT EXISTS cif_price_inr NUMERIC,
+  ADD COLUMN IF NOT EXISTS customs_duty NUMERIC,
+  ADD COLUMN IF NOT EXISTS sw_surcharge NUMERIC,
+  ADD COLUMN IF NOT EXISTS igst NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_landed_cost NUMERIC,
+  ADD COLUMN IF NOT EXISTS store_landing_price NUMERIC,
+  ADD COLUMN IF NOT EXISTS suggested_mrp NUMERIC,
+  ADD COLUMN IF NOT EXISTS store_margin_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS store_margin_rs NUMERIC;
+
+-- Rename existing columns for consistency
+ALTER TABLE products RENAME COLUMN cost_price TO cost_price_legacy;
+ALTER TABLE products RENAME COLUMN mrp TO mrp_legacy;
+
+-- Add HS code to categories
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS hs_code TEXT;
+ALTER TABLE categories RENAME COLUMN duty_percent TO customs_duty_percent;
+ALTER TABLE categories RENAME COLUMN gst_percent TO igst_percent;
+```
+
+---
+
+## UPGRADE 2: REAL AUTH (HIGH PRIORITY)
+
+### Problem
+Login currently fakes auth — just redirects. Client dashboard is hardcoded to client ID=1. Need real sessions.
+
+### Implementation
+
+Use Supabase Auth (already have supabase client). Keep it simple:
+
+1. **Register:** Email + password. Creates Supabase auth user + row in `users` table.
+2. **Login:** Email + password via Supabase Auth. Returns session token.
+3. **Session:** Store token in localStorage. Pass as Bearer token to API.
+4. **Middleware:** Express middleware checks auth token on protected routes.
+5. **Role check:** Users have `role` field (admin/client). Admin routes check role=admin.
+6. **Client mapping:** When client logs in, look up `clients` table by `user_id` to get their client record.
+
+### Auth Flow
+
+```
+Login → Supabase Auth → Get user → Check role
+  If admin → redirect /admin/dashboard
+  If client → look up clients.user_id → redirect /client/dashboard
+  
+All /api/clients/* calls → use logged-in user's client_id (NOT hardcoded 1)
+All /api/admin/* calls → check role=admin
+```
+
+### Changes Needed
+
+1. Update `LoginPage.tsx` — real form submission, call Supabase Auth
+2. Create auth context/provider to hold session + user info
+3. Protect routes with auth check (redirect to /login if not authenticated)
+4. Update `client/Dashboard.tsx` — use logged-in user's client_id instead of hardcoded 1
+5. Update `client/LaunchKit.tsx` — same, use logged-in client_id
+6. Update `client/Payments.tsx` — same
+7. Add registration page for new partners (admin can also create client accounts)
+8. Add "Invite Partner" button on admin client detail page (sends magic link or creates account)
+
+---
+
+## UPGRADE 3: ADMIN PRODUCT ADD/EDIT FORM (HIGH PRIORITY)
+
+### Problem
+"Add New Product" button on admin/products page is dead. No form exists.
+
+### Build This
+
+A slide-out panel (Sheet component from shadcn) or full-page form with:
+
+**Section 1: Basic Info**
+- Product Name (text, required)
+- Category (dropdown from categories, required)
+- Sub-category (text, optional)
+- Supplier Name (text, optional)
+- Image URL (text input — paste image URL; later add upload)
+- Tags (multi-select chips: Bestseller, New Arrival, Recommended, Seasonal, High Margin, Fast Mover)
+- Status (dropdown: Active, Draft, Discontinued)
+
+**Section 2: Sourcing Details (Admin Only — Never Shown to Clients)**
+- EXW Price in Yuan (number, required) — THIS IS THE KEY INPUT
+- Units per Carton (number, required)
+- Carton Length cm (number, required)
+- Carton Width cm (number, required)
+- Carton Height cm (number, required)
+- Carton Weight kg (number, optional)
+- MOQ (number, optional)
+- HS Code (text, optional)
+
+**Section 3: LIVE Price Breakdown (Auto-calculated as admin types)**
+
+As soon as the admin enters EXW price + carton dimensions, show a live-updating breakdown card:
+
+```
+┌─ PRICE BREAKDOWN ─────────────────────┐
+│ EXW:        ¥8.50                     │
+│ + Sourcing: ¥0.43 (5%)               │
+│ FOB:        ¥8.93 → ₹107.10          │
+│ + Freight:  ₹18.40 per unit          │
+│ + Insurance:₹0.54                     │
+│ CIF:        ₹126.04                   │
+│ + Duty:     ₹12.60 (10%)             │
+│ + SWS:      ₹1.26                     │
+│ Assessable: ₹139.90                   │
+│ + IGST:     ₹25.18 (18%)             │
+│ ─────────────────────────────────────│
+│ LANDED COST:  ₹165.08                │
+│ + Our Markup: ₹41.27 (25%)           │
+│ ═════════════════════════════════════│
+│ STORE PRICE:  ₹206.35                │
+│ SUGGESTED MRP: ₹299                  │
+│ STORE MARGIN:  ₹92.65 (31.0%)        │
+│                                       │
+│ ⚠️ Margin below 35% — consider MRP   │
+│    ₹399 → margin 48.3% (₹192.65)    │
+└───────────────────────────────────────┘
+```
+
+This breakdown updates in real-time using the price engine logic. Uses global settings from the DB.
+
+**Also show MRP options:**
+Show 2-3 MRP band options with margin for each:
+- MRP ₹249 → Margin ₹42.65 (17.1%) ❌ Too low
+- MRP ₹299 → Margin ₹92.65 (31.0%) ⚠️ Below target
+- MRP ₹399 → Margin ₹192.65 (48.3%) ✅ Good
+
+Let admin click to select the MRP band (overriding auto-suggestion).
+
+### CSV Bulk Import
+
+Add a "Bulk Import" button next to "Add New Product" on the admin products page.
+
+Accept CSV with columns:
+```
+name, category, exw_price_yuan, units_per_carton, carton_length_cm, carton_width_cm, carton_height_cm, carton_weight_kg, moq, supplier_name, hs_code, tags, status
+```
+
+On upload:
+1. Parse CSV
+2. Match category names to category IDs
+3. Run price engine for each row
+4. Show preview table with calculated prices
+5. "Confirm Import" button to save all
+6. Show count: "Imported X products, Y errors"
+
+---
+
+## UPGRADE 4: CATALOG PRICE BAND FILTERS (MEDIUM PRIORITY)
+
+### Problem
+Currently there's only a price slider. We need clickable price band chips that investors can quickly tap on mobile.
+
+### Add These Filters to Catalog Page
+
+**Above the product grid, add a row of clickable chips:**
+
+**Landing Price (Your Cost):**
+`All` | `Under ₹49` | `₹49-99` | `₹99-199` | `₹199-499` | `₹499+`
+
+**MRP Band:**
+`All` | `Under ₹99` | `₹99-199` | `₹199-399` | `₹399-999`
+
+**Tags (Quick Filters):**
+`🔥 Bestseller` | `🆕 New` | `🎯 Recommended` | `💰 High Margin (>50%)`
+
+These should be pill-shaped buttons. Selected state = filled primary color. Multiple can be active. They work in combination with the existing category dropdown.
+
+### Fix Sort Functionality
+
+The sort dropdown exists but doesn't actually sort. Implement:
+- Price: Low to High → sort by `storeLandingPrice` ascending
+- Price: High to Low → sort by `storeLandingPrice` descending  
+- Highest Margin → sort by `storeMarginPercent` descending
+- Newest → sort by product `id` descending (or created_at if available)
+
+### Update Catalog Card Display
+
+Replace current `costPrice` / `mrp` with new calculated fields:
+
+```
+Your Cost: ₹206        (storeLandingPrice)
+Sell At: ₹299-399      (suggestedMrp and next band)
+Margin: ₹93-193 (31-48%)
+```
+
+IMPORTANT: Never show Yuan prices, EXW, FOB, CIF, or any sourcing details on client-facing pages.
+
+---
+
+## UPGRADE 5: ADMIN PRICE SETTINGS PAGE (MEDIUM PRIORITY)
+
+### Problem
+Global settings exist in DB but there's NO UI to edit them.
+
+### Build New Page: /admin/settings
+
+Add to admin sidebar navigation: "Price Settings" with Settings icon.
+
+**Section 1: Exchange Rate & Sourcing**
+- Yuan to INR Exchange Rate: [12.0] (number input with + / - buttons)
+- Sourcing Commission %: [5] 
+- Last updated: [date]
+
+**Section 2: Logistics**
+- Freight Rate per CBM (INR): [8000]
+- Insurance % of FOB: [0.5]
+
+**Section 3: Duties & Taxes**
+- Social Welfare Surcharge %: [10] (usually fixed at 10%, but editable)
+- Note: "Category-level Customs Duty and IGST rates are managed in Category settings"
+
+**Section 4: Our Margin**
+- Our Markup %: [25]
+- Target Store Margin % (for MRP suggestion): [50]
+
+**Each field should have:**
+- Current value displayed prominently
+- Edit button → inline edit
+- Save → calls `POST /api/settings` 
+- After save → show "Recalculate all products?" confirmation
+- If confirmed → calls `POST /api/recalculate-all`
+- Show progress: "Recalculating 247 products... Done."
+
+**Section 5: Category Duty/GST Table**
+
+Show editable table of all categories with:
+| Category | Customs Duty % | IGST % | HS Code | Products Count |
+|----------|---------------|--------|---------|---------------|
+| Kitchen  | 10            | 18     | 3924    | 45            |
+| Toys     | 20            | 12     | 9503    | 23            |
+
+Inline-editable. Save triggers recalculation for that category's products.
+
+---
+
+## UPGRADE 6: CLIENT-SPECIFIC DASHBOARD (MEDIUM)
+
+### Problem
+Client dashboard is hardcoded to fetch `/api/clients/1`. Every partner sees the same data.
+
+### Fix
+Once auth is implemented (Upgrade 2), the client dashboard should:
+
+1. Get logged-in user's ID from auth context
+2. Look up `clients` table where `user_id = auth.user.id`
+3. Fetch that client's data, kit, payments
+4. If no client record found → show "Your account is being set up. Contact your manager."
+
+Update these pages to use dynamic client_id:
+- `/client/dashboard` → fetch `/api/clients/me` (new endpoint that uses auth)
+- `/client/launch-kit` → fetch `/api/kit-items/me`
+- `/client/payments` → fetch `/api/payments/me`
+
+Create `/api/clients/me` endpoint:
+```typescript
+app.get("/api/clients/me", authMiddleware, async (req, res) => {
+  const userId = req.user.id; // from auth middleware
+  const client = await storage.getClientByUserId(userId);
+  if (!client) return res.status(404).json({ error: "No client record found" });
+  res.json(client);
+});
+```
+
+---
+
+## UPGRADE 7: ADMIN CLIENT MANAGEMENT IMPROVEMENTS
+
+### Add Kanban View
+
+On `/admin/clients`, add a toggle: Table View | Kanban View
+
+**Kanban columns** = the STAGES array:
+Lead → Token Paid → Location Shared → Location Approved → 3D Design → Payment Partial → In Production → Shipped → Setup → Launched → Active
+
+Each client card shows: Name, City, Total Paid, Next Action.
+Drag-and-drop between columns to change stage (calls PATCH /api/clients/:id with new stage).
+
+### Client Detail Improvements
+
+On `/admin/clients/:id`, add:
+
+1. **Stage Change Dropdown** — quick stage update with confirmation
+2. **Add Payment Button** — opens modal to record a new payment
+3. **Add Note** — free text notes (add a `notes` table: id, client_id, text, created_at, created_by)
+4. **Upload Documents** — location photos, lease copy, 3D design files (store in Supabase Storage)
+5. **Activity Log** — show stage changes + payments + notes in chronological order
+6. **WhatsApp Link** — clicking "Contact" opens WhatsApp with pre-filled message: "Hi [Name], this is regarding your Eazy-to-Sell store in [City]..."
+7. **Invite to Portal** — button that creates user account and sends credentials (or just copies a signup link)
+
+---
+
+## UPGRADE 8: LANDING PAGE IMPROVEMENTS
+
+### Current landing page is generic. Make it specific to our business:
+
+**Hero Section:**
+- Headline: "Launch Your Own Value Retail Store"
+- Subheadline: "We handle sourcing, setup, and supply. You run the store."
+- Key stats: "₹12-15L Total Investment • 800-1000 sq ft • 30-45 Day Setup • 1000+ Products"
+- Two CTAs: "Talk to Us" (WhatsApp link) and "Explore Products" (link to /roi-calculator or public catalog)
+
+**How It Works (6 Steps):**
+1. Choose Your Location (800-1000 sq ft high street)
+2. We Design Your Store (3D layout + planogram)
+3. We Source Products (1000+ curated items from ₹10-999)
+4. We Set Up Everything (interior + shelving + inventory)
+5. We Train You (operations + POS + merchandising)
+6. You Launch & Grow (we support with replenishment)
+
+**Investment Breakdown:**
+- Interior & Setup: ~₹4-5L
+- Opening Inventory: ~₹7-10L
+- Total: ₹12-15L (adjust as your real numbers firm up)
+
+**What's Included vs What's Not** (Important — sets expectations)
+
+Included:
+- Store interior design (3D layout)
+- Shelving & fixtures kit
+- Opening inventory (1000+ SKUs)
+- POS setup guidance
+- Operations playbook
+- 30-day post-launch support
+- Replenishment ordering system
+
+NOT Included (partner's responsibility):
+- Rent & deposit
+- Staff hiring & salaries
+- Local licenses & compliance
+- Day-to-day store operations
+- Electricity, maintenance
+
+**Testimonial / Social Proof placeholder** — add later when you have real partners
+
+**FAQ Section (5-7 questions)**
+
+**Footer:** Contact WhatsApp number, Email, "Powered by Eazy-to-Sell"
+
+---
+
+## UPGRADE 9: MOBILE OPTIMIZATION
+
+### Critical — investors will open this from WhatsApp on phone
+
+1. **Catalog grid:** 1 column on mobile (full-width cards), 2 on tablet, 3-4 on desktop
+2. **Sidebar:** Already collapses on mobile (good). Make sure bottom nav or hamburger is easy to tap.
+3. **Price breakdown:** Stack vertically on mobile, not side-by-side
+4. **Filter chips:** Horizontally scrollable on mobile (no wrapping to 4 rows)
+5. **Touch targets:** All buttons minimum 44px tall
+6. **Currency formatting:** Use Indian format: ₹1,50,000 everywhere (not ₹150,000)
+7. **Test on 375px width** (iPhone SE) — nothing should overflow or require horizontal scroll
+
+---
+
+## UPGRADE 10: AIRTABLE SYNC UI
+
+### Problem
+The sync endpoint exists but there's no button in the admin UI to trigger it.
+
+### Add to Admin Dashboard
+
+A card that shows:
+- "Airtable Sync"
+- Last synced: [date]  
+- Clients in DB: [count]
+- Button: "Sync Now"
+- On click → calls POST /api/sync-airtable → shows progress → shows result count
+
+---
+
+## WHAT NOT TO BUILD YET (Defer These)
+
+- Training center / modules
+- Reorder / replenishment system (post first 2 stores)
+- Shipment tracking (need real tracking data first)
+- Store layout viewer with 3D (Molly provides this separately)
+- Chat / messaging system
+- Notifications
+- Dark mode
+- Public product catalog (for now, catalog is login-only)
+
+---
+
+## PRIORITY ORDER FOR IMPLEMENTATION
+
+1. **Price Calculator Engine + Product Schema Migration** (Upgrade 1) — without this, nothing works
+2. **Admin Product Add/Edit Form with Live Price Breakdown** (Upgrade 3) — so we can actually populate catalog
+3. **Admin Price Settings Page** (Upgrade 5) — so we can adjust exchange rate, markup
+4. **Catalog Price Band Filters + Sort Fix** (Upgrade 4) — so clients can actually browse
+5. **Real Auth** (Upgrade 2) — so each client sees their own data
+6. **Client-Specific Dashboard** (Upgrade 6) — depends on auth
+7. **Admin Client Management** (Upgrade 7) — Kanban, notes, docs
+8. **Landing Page** (Upgrade 8) — nice to have, not blocking
+9. **Mobile Polish** (Upgrade 9) — ongoing
+10. **Airtable Sync UI** (Upgrade 10) — already works, just needs a button
+
+---
+
+## DATABASE: Supabase
+
+The project already connects to Supabase. Connection details are in environment variables:
+- SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY
+
+All database operations go through `server/storage.ts` which wraps Supabase client calls with snake_case ↔ camelCase conversion. Follow the same pattern for new queries.
+
+## DESIGN SYSTEM (Already In Place)
+
+- Using shadcn/ui components
+- Primary color: teal (already configured)
+- Font: Inter/system (already configured)
+- Keep the existing design language — don't change colors or fonts
+- All currency: ₹ symbol + Indian number formatting (₹1,50,000)
