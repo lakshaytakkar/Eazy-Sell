@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarUrl } from "@/lib/utils";
 import { Plus, Search, Filter, MapPin, Phone, IndianRupee, GripVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -119,6 +120,7 @@ function ClientCardContent({ client }: { client: Client }) {
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2.5">
           <Avatar className="h-8 w-8 text-xs border border-muted">
+            <AvatarImage src={getAvatarUrl(client.name, 64)} alt={client.name} />
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {client.name
                 .split(" ")

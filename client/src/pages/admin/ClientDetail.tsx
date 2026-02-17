@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarUrl } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -243,6 +244,7 @@ export default function ClientDetail() {
               <div className="flex flex-col gap-4 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-4">
                   <Avatar className="h-14 w-14 border-2 border-primary/20 shadow-sm">
+                    <AvatarImage src={getAvatarUrl(client.name, 128)} alt={client.name} />
                     <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
                       {initials}
                     </AvatarFallback>
@@ -542,6 +544,7 @@ export default function ClientDetail() {
                 </h3>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
+                    <AvatarImage src={getAvatarUrl(client.managerName || "AM", 64)} alt={client.managerName || "Account Manager"} />
                     <AvatarFallback className="text-xs bg-blue-100 text-blue-700">
                       {client.managerName?.split(" ").map((n) => n[0]).join("") || "AM"}
                     </AvatarFallback>
