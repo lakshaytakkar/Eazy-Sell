@@ -4,6 +4,7 @@
 Dual-portal web application for retail partnership management. Client portal for retail partners to manage store launch journey (catalog, launch kit, payments). Admin backoffice for managing clients, inventory, kit approvals, and pipeline stages.
 
 ## Recent Changes
+- Feb 17, 2026: Migrated from Neon PostgreSQL + Drizzle ORM to Supabase. Schema uses pure Zod validation + TypeScript interfaces. Storage layer uses @supabase/supabase-js with camelCase↔snake_case conversion. Tables created and seeded via Supabase Management API.
 - Feb 13, 2026: Theme switched to red primary (hsl 358 89% 60%) + yellow secondary (hsl 45 93% 47%). Quick filter thumbnails regenerated as product images (no icons). Product images regenerated as boxed/packaged sets. Category images regenerated as shelf displays. Hover animations removed from filters and categories.
 - Feb 13, 2026: Landing page upgraded with product-focused sections: quick filter carousel, product showcase with locked prices, categories bento grid, conversion USP strip. All fetching real API data.
 - Feb 13, 2026: Full-stack conversion complete. PostgreSQL database, Drizzle ORM, Express API, all frontend pages connected to real data.
@@ -17,12 +18,15 @@ Dual-portal web application for retail partnership management. Client portal for
 
 ## Project Architecture
 - **Frontend**: React + Vite + TanStack Query + Wouter routing + shadcn/ui + Tailwind CSS
-- **Backend**: Express.js + Drizzle ORM + PostgreSQL (Neon)
-- **Schema**: shared/schema.ts (users, categories, products, clients, launchKitItems, launchKitSubmissions, payments, priceSettings)
+- **Backend**: Express.js + Supabase JS Client (@supabase/supabase-js)
+- **Database**: Supabase (PostgreSQL), project ref: cnzzmbddkurnztfjhxpp, region: Oceania (Sydney)
+- **Schema**: shared/schema.ts (Zod validation + TypeScript interfaces, no Drizzle)
+- **Supabase Client**: server/supabase.ts (initialized with SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY)
 - **API**: All routes prefixed /api in server/routes.ts
-- **Storage**: DatabaseStorage class in server/storage.ts
+- **Storage**: DatabaseStorage class in server/storage.ts (camelCase↔snake_case conversion)
 - **Styling**: client/src/index.css with custom design tokens
 - **Assets**: client/src/assets/images/ (must be imported as JS variables, not URL paths)
+- **DB Tables**: users, categories, products, clients, launch_kit_items, launch_kit_submissions, payments, price_settings
 
 ## Key Routes
 - `/` - Landing page (hero, stats, quick filters, product showcase, categories, USPs, bento, 3D design, steps, features, stories, CTA)
