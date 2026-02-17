@@ -24,6 +24,7 @@ import ClientPayments from "@/pages/client/Payments";
 // Admin Pages
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminClients from "@/pages/admin/Clients";
+import ClientDetail from "@/pages/admin/ClientDetail";
 import AdminProducts from "@/pages/admin/Products";
 import KitReviews from "@/pages/admin/Reviews";
 
@@ -74,6 +75,11 @@ function Router() {
       <Route path="/admin/dashboard">
         <DashboardLayout userType="admin">
           <AdminDashboard />
+        </DashboardLayout>
+      </Route>
+      <Route path="/admin/clients/:id">
+        <DashboardLayout userType="admin">
+          <ClientDetail />
         </DashboardLayout>
       </Route>
       <Route path="/admin/clients">
