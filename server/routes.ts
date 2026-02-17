@@ -9,7 +9,42 @@ import {
   insertLaunchKitSubmissionSchema,
   insertPaymentSchema,
   insertPriceSettingSchema,
+  qualificationFormSchema,
 } from "@shared/schema";
+
+function scoreFromQualification(data: any): {
+  scoreBudget: number;
+  scoreLocation: number;
+  scoreOperator: number;
+  scoreTimeline: number;
+  scoreExperience: number;
+  scoreEngagement: number;
+} {
+  let scoreBudget = 1;
+  if (data.investmentRange === '8_10l') scoreBudget = 2;
+  else if (data.investmentRange === '10_15l') scoreBudget = 3;
+  else if (data.investmentRange === 'above_15l') scoreBudget = 3;
+
+  let scoreLocation = 1;
+  if (data.hasLocation === 'searching') scoreLocation = 2;
+  else if (data.hasLocation === 'yes') scoreLocation = 3;
+
+  let scoreOperator = 1;
+  if (data.operatorType === 'hiring') scoreOperator = 2;
+  else if (data.operatorType === 'self') scoreOperator = 3;
+
+  let scoreTimeline = 1;
+  if (data.timeline === '3_6_months') scoreTimeline = 1;
+  else if (data.timeline === '1_3_months') scoreTimeline = 2;
+  else if (data.timeline === 'less_1_month') scoreTimeline = 3;
+
+  let scoreExperience = 1;
+  if (data.previousBusiness === 'yes') scoreExperience = 2;
+
+  let scoreEngagement = 2;
+
+  return { scoreBudget, scoreLocation, scoreOperator, scoreTimeline, scoreExperience, scoreEngagement };
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -135,6 +170,84 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  app.post("/api/qualify", async (req, res) => {
+    try {
+      const parsed = qualificationFormSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
+      const data = parsed.data;
+      const scores = scoreFromQualification(data);
+      const totalScore = scores.scoreBudget + scores.scoreLocation + scores.scoreOperator +
+                         scores.scoreTimeline + scores.scoreExperience + scores.scoreEngagement;
+
+      let selectedPackage = null;
+      if (data.investmentRange === 'below_8l' || data.investmentRange === '8_10l') selectedPackage = 'Lite';
+      else if (data.investmentRange === '10_15l') selectedPackage = 'Pro';
+      else if (data.investmentRange === 'above_15l') selectedPackage = 'Elite';
+
+      const notesLines = [];
+      if (data.currentOccupation) notesLines.push(`Occupation: ${data.currentOccupation}`);
+      if (data.previousBusiness === 'yes' && data.previousBusinessDetails) notesLines.push(`Previous business: ${data.previousBusinessDetails}`);
+      if (data.exploringOther === 'yes') notesLines.push('Exploring other retail options');
+      if (data.attraction) notesLines.push(`Attracted by: ${data.attraction}`);
+      if (data.expectedRevenue) notesLines.push(`Expected revenue: ${data.expectedRevenue}`);
+      if (data.understandsNotFranchise === 'need_clarification') notesLines.push('Needs clarification: not a franchise');
+      if (data.monthlyRentBudget) notesLines.push(`Monthly rent budget: ₹${data.monthlyRentBudget}`);
+
+      const clientData = {
+        name: data.fullName,
+        city: data.city,
+        state: data.state,
+        phone: data.phone,
+        email: data.email || null,
+        stage: 'New Inquiry',
+        leadSource: 'Website',
+        ...scores,
+        totalScore,
+        selectedPackage,
+        qualificationFormCompleted: true,
+        storeAddress: data.locationAddress || null,
+        storeArea: data.locationArea || null,
+        storeFrontage: data.locationFrontage || null,
+        notes: notesLines.join('\n') || null,
+      };
+
+      const client = await storage.createClient(clientData as any);
+      res.status(201).json({ success: true, clientId: client.id, totalScore });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/checklist/items", async (_req, res) => {
+    const items = await storage.getChecklistItems();
+    res.json(items);
+  });
+
+  app.get("/api/checklist/:clientId", async (req, res) => {
+    const status = await storage.getChecklistStatus(Number(req.params.clientId));
+    res.json(status);
+  });
+
+  app.post("/api/checklist/:clientId", async (req, res) => {
+    const { itemId, completed } = req.body;
+    if (itemId === undefined || completed === undefined) {
+      return res.status(400).json({ error: "itemId and completed required" });
+    }
+    const result = await storage.toggleChecklistItem(Number(req.params.clientId), itemId, completed);
+    res.json(result);
+  });
+
+  app.get("/api/templates", async (_req, res) => {
+    const templates = await storage.getWhatsAppTemplates();
+    res.json(templates);
+  });
+
+  app.get("/api/faqs", async (_req, res) => {
+    const faqs = await storage.getFaqItems();
+    res.json(faqs);
+  });
+
   app.get("/api/kit-items/:clientId", async (req, res) => {
     const items = await storage.getKitItems(Number(req.params.clientId));
     res.json(items);
@@ -248,10 +361,10 @@ export async function registerRoutes(
       } while (offset);
 
       const statusToStage: Record<string, string> = {
-        "Active": "Active",
+        "Active": "In Execution",
         "All Done": "Launched",
-        "Searching Area": "Location Shared",
-        "Pending": "Lead",
+        "Searching Area": "Discovery Call",
+        "Pending": "New Inquiry",
       };
 
       const parseArea = (val: string | undefined): number | null => {
@@ -282,6 +395,7 @@ export async function registerRoutes(
       await sb.from("payments").delete().neq("id", 0);
       await sb.from("launch_kit_items").delete().neq("id", 0);
       await sb.from("launch_kit_submissions").delete().neq("id", 0);
+      await sb.from("readiness_checklist_status").delete().neq("id", 0);
       await sb.from("clients").delete().neq("id", 0);
 
       const syncedClients: Array<{ name: string; id: number }> = [];
@@ -294,7 +408,7 @@ export async function registerRoutes(
         if (!customerName) { skipped++; continue; }
 
         const status = f["Status"] || "Pending";
-        const stage = statusToStage[status] || "Lead";
+        const stage = statusToStage[status] || "New Inquiry";
         const location = f["Customer Location"] || "";
         const city = extractCity(location);
         const storeLocation = f["Stores location"] || f["Customer Location"] || "";
@@ -399,24 +513,6 @@ export async function registerRoutes(
       ];
       for (const p of prodData) {
         await storage.createProduct(p);
-      }
-
-      const clientData = [
-        { name: "Rahul Sharma", city: "Jaipur", stage: "3D Design", phone: "+91 98765 43210", email: "rahul.s@example.com", totalPaid: 150000, totalDue: 350000, nextAction: "Approve 3D Design Layout", managerName: "Amit Verma", managerPhone: "+91 99999 88888", storeAddress: "Plot 45, Raja Park, Jaipur", storeArea: 300 },
-        { name: "Priya Patel", city: "Ahmedabad", stage: "Location Approved", phone: "+91 98989 89898", email: "priya.p@example.com", totalPaid: 50000, totalDue: 450000, nextAction: "Submit Floor Plan measurements", managerName: "Sneha Gupta", managerPhone: "+91 77777 66666", storeAddress: "Shop 12, CG Road, Ahmedabad", storeArea: 250 },
-        { name: "Vikram Singh", city: "Chandigarh", stage: "Lead", phone: "+91 91234 56789", email: "vikram.s@example.com", totalPaid: 0, totalDue: 500000, nextAction: "Schedule Initial Call", managerName: "Amit Verma", managerPhone: "+91 99999 88888" },
-      ];
-      for (const c of clientData) {
-        await storage.createClient(c);
-      }
-
-      const payData = [
-        { clientId: 1, invoiceId: "INV-001", date: "Jan 15, 2024", description: "Token Amount", amount: 50000, status: "Paid", method: "Bank Transfer" },
-        { clientId: 1, invoiceId: "INV-002", date: "Feb 10, 2024", description: "Partial Payment (Inventory)", amount: 100000, status: "Paid", method: "UPI" },
-        { clientId: 1, invoiceId: "INV-003", date: "Pending", description: "Final Settlement", amount: 350000, status: "Due", method: "" },
-      ];
-      for (const p of payData) {
-        await storage.createPayment(p);
       }
 
       const settingsData = [

@@ -12,6 +12,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 // Pages
 import LandingPage from "@/pages/LandingPage";
 import ROICalculator from "@/pages/ROICalculator";
+import QualificationForm from "@/pages/QualificationForm";
+import ScopePage from "@/pages/ScopePage";
 import LoginPage from "@/pages/auth/LoginPage";
 
 // Client Pages
@@ -28,6 +30,7 @@ import ClientDetail from "@/pages/admin/ClientDetail";
 import AdminProducts from "@/pages/admin/Products";
 import KitReviews from "@/pages/admin/Reviews";
 import AdminSettings from "@/pages/admin/Settings";
+import AdminTemplates from "@/pages/admin/Templates";
 
 function Router() {
   return (
@@ -42,6 +45,14 @@ function Router() {
         <PublicLayout>
           <ROICalculator />
         </PublicLayout>
+      </Route>
+      <Route path="/scope">
+        <PublicLayout>
+          <ScopePage />
+        </PublicLayout>
+      </Route>
+      <Route path="/qualify">
+        <QualificationForm />
       </Route>
       <Route path="/login" component={LoginPage} />
 
@@ -96,6 +107,11 @@ function Router() {
       <Route path="/admin/reviews">
         <DashboardLayout userType="admin">
           <KitReviews />
+        </DashboardLayout>
+      </Route>
+      <Route path="/admin/templates">
+        <DashboardLayout userType="admin">
+          <AdminTemplates />
         </DashboardLayout>
       </Route>
       <Route path="/admin/settings">

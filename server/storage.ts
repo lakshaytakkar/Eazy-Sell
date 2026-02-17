@@ -9,6 +9,10 @@ import type {
   LaunchKitSubmission, InsertLaunchKitSubmission,
   Payment, InsertPayment,
   PriceSetting, InsertPriceSetting,
+  ReadinessChecklistItem,
+  ReadinessChecklistStatus,
+  WhatsAppTemplate,
+  FaqItem,
 } from "@shared/schema";
 
 function snakeToCamel(obj: any): any {
@@ -81,6 +85,13 @@ export interface IStorage {
   recalculateProduct(productId: number): Promise<Product | undefined>;
   recalculateAllProducts(): Promise<number>;
   recalculateCategoryProducts(categoryId: number): Promise<number>;
+
+  getChecklistItems(): Promise<ReadinessChecklistItem[]>;
+  getChecklistStatus(clientId: number): Promise<ReadinessChecklistStatus[]>;
+  toggleChecklistItem(clientId: number, itemId: number, completed: boolean): Promise<ReadinessChecklistStatus>;
+
+  getWhatsAppTemplates(): Promise<WhatsAppTemplate[]>;
+  getFaqItems(): Promise<FaqItem[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -211,7 +222,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClients(): Promise<Client[]> {
-    const { data, error } = await supabase.from("clients").select("*");
+    const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []).map(snakeToCamel);
   }
@@ -222,13 +233,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClient(client: InsertClient): Promise<Client> {
-    const { data, error } = await supabase.from("clients").insert(camelToSnake(client)).select().single();
+    const scoreFields = ['scoreBudget', 'scoreLocation', 'scoreOperator', 'scoreTimeline', 'scoreExperience', 'scoreEngagement'] as const;
+    let totalScore = 0;
+    for (const f of scoreFields) {
+      totalScore += (client as any)[f] || 0;
+    }
+    const clientWithScore = { ...client, totalScore };
+
+    const { data, error } = await supabase.from("clients").insert(camelToSnake(clientWithScore)).select().single();
     if (error) throw new Error(error.message);
     return snakeToCamel(data);
   }
 
   async updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined> {
-    const { data, error } = await supabase.from("clients").update(camelToSnake(client)).eq("id", id).select().single();
+    const scoreFields = ['scoreBudget', 'scoreLocation', 'scoreOperator', 'scoreTimeline', 'scoreExperience', 'scoreEngagement'] as const;
+    const hasScoreUpdate = scoreFields.some(f => (client as any)[f] !== undefined);
+
+    let updateData: any = { ...client, updatedAt: new Date().toISOString() };
+
+    if (hasScoreUpdate) {
+      const existing = await this.getClient(id);
+      if (existing) {
+        let totalScore = 0;
+        for (const f of scoreFields) {
+          totalScore += (client as any)[f] !== undefined ? (client as any)[f] : ((existing as any)[f] || 0);
+        }
+        updateData.totalScore = totalScore;
+      }
+    }
+
+    const { data, error } = await supabase.from("clients").update(camelToSnake(updateData)).eq("id", id).select().single();
     if (error) return undefined;
     return snakeToCamel(data);
   }
@@ -420,6 +454,57 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return count;
+  }
+
+  async getChecklistItems(): Promise<ReadinessChecklistItem[]> {
+    const { data, error } = await supabase.from("readiness_checklist_items").select("*").order("sort_order");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
+  }
+
+  async getChecklistStatus(clientId: number): Promise<ReadinessChecklistStatus[]> {
+    const { data, error } = await supabase.from("readiness_checklist_status").select("*").eq("client_id", clientId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
+  }
+
+  async toggleChecklistItem(clientId: number, itemId: number, completed: boolean): Promise<ReadinessChecklistStatus> {
+    const { data: existing } = await supabase
+      .from("readiness_checklist_status")
+      .select("*")
+      .eq("client_id", clientId)
+      .eq("item_id", itemId);
+
+    if (existing && existing.length > 0) {
+      const { data, error } = await supabase
+        .from("readiness_checklist_status")
+        .update({ completed, updated_at: new Date().toISOString() })
+        .eq("id", existing[0].id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return snakeToCamel(data);
+    }
+
+    const { data, error } = await supabase
+      .from("readiness_checklist_status")
+      .insert({ client_id: clientId, item_id: itemId, completed, updated_at: new Date().toISOString() })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
+  }
+
+  async getWhatsAppTemplates(): Promise<WhatsAppTemplate[]> {
+    const { data, error } = await supabase.from("whatsapp_templates").select("*").order("sort_order");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
+  }
+
+  async getFaqItems(): Promise<FaqItem[]> {
+    const { data, error } = await supabase.from("faq_items").select("*").order("sort_order");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 }
 

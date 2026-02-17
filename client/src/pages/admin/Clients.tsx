@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatarUrl } from "@/lib/utils";
-import { Plus, Search, Filter, MapPin, Phone, IndianRupee, GripVertical } from "lucide-react";
+import { Plus, Search, MapPin, Phone, IndianRupee, GripVertical, CalendarClock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useState, useCallback } from "react";
 import type { Client } from "@shared/schema";
+import { PIPELINE_STAGES, getScoreLabel } from "@shared/schema";
 import {
   DndContext,
   DragOverlay,
@@ -25,20 +26,28 @@ import {
 } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
 
+const columns = [
+  { id: "pipeline", title: "Pipeline", stages: ["New Inquiry", "Qualification Sent", "Discovery Call"], defaultStage: "New Inquiry" },
+  { id: "proposal", title: "Proposal", stages: ["Proposal Sent", "Negotiation"], defaultStage: "Proposal Sent" },
+  { id: "execution", title: "Execution", stages: ["Token Paid", "In Execution"], defaultStage: "Token Paid" },
+  { id: "live", title: "Live", stages: ["Launched"], defaultStage: "Launched" },
+  { id: "lost", title: "Lost", stages: ["Lost"], defaultStage: "Lost" },
+];
+
 const columnColors: Record<string, string> = {
-  leads: "bg-slate-500",
-  onboarding: "bg-blue-500",
-  design: "bg-violet-500",
-  production: "bg-orange-500",
+  pipeline: "bg-blue-500",
+  proposal: "bg-violet-500",
+  execution: "bg-orange-500",
   live: "bg-green-500",
+  lost: "bg-slate-500",
 };
 
 const columnBorderColors: Record<string, string> = {
-  leads: "border-slate-400",
-  onboarding: "border-blue-400",
-  design: "border-violet-400",
-  production: "border-orange-400",
+  pipeline: "border-blue-400",
+  proposal: "border-violet-400",
+  execution: "border-orange-400",
   live: "border-green-400",
+  lost: "border-slate-400",
 };
 
 function formatAmount(val: number | null | undefined) {
@@ -48,20 +57,20 @@ function formatAmount(val: number | null | undefined) {
   return `₹${val.toLocaleString("en-IN")}`;
 }
 
-const columns = [
-  { id: "leads", title: "New Leads", stages: ["Lead"], defaultStage: "Lead" },
-  { id: "onboarding", title: "Onboarding", stages: ["Token Paid", "Location Shared", "Location Approved"], defaultStage: "Token Paid" },
-  { id: "design", title: "Design & Setup", stages: ["3D Design", "Payment Partial"], defaultStage: "3D Design" },
-  { id: "production", title: "Production", stages: ["In Production", "Shipped"], defaultStage: "In Production" },
-  { id: "live", title: "Live Stores", stages: ["Setup", "Launched", "Active"], defaultStage: "Active" },
-];
-
 function getColumnForStage(stage: string): string | null {
   for (const col of columns) {
     if (col.stages.includes(stage)) return col.id;
   }
   return null;
 }
+
+const packageColors: Record<string, string> = {
+  Lite: "bg-sky-50 text-sky-700 border-sky-200",
+  Pro: "bg-purple-50 text-purple-700 border-purple-200",
+  Elite: "bg-amber-50 text-amber-700 border-amber-200",
+};
+
+type ScoreFilter = "All" | "Hot" | "Warm" | "Nurture";
 
 function DraggableClientCard({ client, isDragOverlay }: { client: Client; isDragOverlay?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -76,7 +85,7 @@ function DraggableClientCard({ client, isDragOverlay }: { client: Client; isDrag
   if (isDragOverlay) {
     return (
       <Card
-        className="w-72 shadow-xl border-primary/40 border-l-4 border-l-primary rotate-[2deg] scale-105 bg-card"
+        className="w-72 shadow-xl border-primary/40 border-l-4 border-l-primary rotate-[2deg] scale-105 bg-card rounded-2xl"
         data-testid={`card-client-${client.id}`}
       >
         <ClientCardContent client={client} />
@@ -91,7 +100,7 @@ function DraggableClientCard({ client, isDragOverlay }: { client: Client; isDrag
       className={`${isDragging ? "opacity-30 scale-95" : ""} transition-opacity`}
     >
       <Card
-        className={`group border-l-4 border-l-transparent hover:border-l-primary hover:shadow-md transition-all ${
+        className={`group border-l-4 border-l-transparent hover:border-l-primary hover:shadow-md transition-all rounded-2xl ${
           isDragging ? "border-dashed border-muted" : "cursor-grab active:cursor-grabbing"
         }`}
         data-testid={`card-client-${client.id}`}
@@ -115,6 +124,8 @@ function DraggableClientCard({ client, isDragOverlay }: { client: Client; isDrag
 }
 
 function ClientCardContent({ client }: { client: Client }) {
+  const scoreInfo = getScoreLabel(client.totalScore);
+
   return (
     <CardContent className="p-3 space-y-3">
       <div className="flex items-start justify-between">
@@ -140,6 +151,13 @@ function ClientCardContent({ client }: { client: Client }) {
             </span>
           </div>
         </div>
+        <Badge
+          variant="outline"
+          className={`text-[10px] px-1.5 py-0.5 h-auto font-medium rounded-full ${scoreInfo.color}`}
+          data-testid={`badge-score-${client.id}`}
+        >
+          {scoreInfo.emoji} {scoreInfo.label}
+        </Badge>
       </div>
 
       <div className="space-y-1.5">
@@ -159,13 +177,37 @@ function ClientCardContent({ client }: { client: Client }) {
         </div>
       </div>
 
-      <Badge
-        variant="outline"
-        className="w-full justify-center text-[10px] font-normal py-0.5 h-auto"
-        data-testid={`badge-stage-${client.id}`}
-      >
-        {client.stage}
-      </Badge>
+      <div className="flex flex-wrap gap-1.5">
+        <Badge
+          variant="outline"
+          className="text-[10px] font-normal py-0.5 h-auto"
+          data-testid={`badge-stage-${client.id}`}
+        >
+          {client.stage}
+        </Badge>
+        {client.selectedPackage && (
+          <Badge
+            variant="outline"
+            className={`text-[10px] font-medium py-0.5 h-auto ${packageColors[client.selectedPackage] || ""}`}
+            data-testid={`badge-package-${client.id}`}
+          >
+            {client.selectedPackage}
+          </Badge>
+        )}
+      </div>
+
+      {client.nextActionDate && (
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+          data-testid={`text-next-action-${client.id}`}
+        >
+          <CalendarClock className="h-3 w-3" />
+          <span className="truncate">
+            {new Date(client.nextActionDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+            {client.nextAction ? ` — ${client.nextAction}` : ""}
+          </span>
+        </div>
+      )}
     </CardContent>
   );
 }
@@ -235,6 +277,7 @@ export default function AdminClients() {
     queryKey: ["/api/clients"],
   });
   const [search, setSearch] = useState("");
+  const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("All");
   const [activeClient, setActiveClient] = useState<Client | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
 
@@ -263,13 +306,17 @@ export default function AdminClients() {
     },
   });
 
-  const filtered = search
-    ? clients.filter(
-        (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.city.toLowerCase().includes(search.toLowerCase())
-      )
-    : clients;
+  const filtered = clients.filter((c) => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!c.name.toLowerCase().includes(q) && !c.city.toLowerCase().includes(q)) return false;
+    }
+    if (scoreFilter !== "All") {
+      const { label } = getScoreLabel(c.totalScore);
+      if (label !== scoreFilter) return false;
+    }
+    return true;
+  });
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const client = event.active.data.current?.client as Client | undefined;
@@ -365,9 +412,17 @@ export default function AdminClients() {
               data-testid="input-search-clients"
             />
           </div>
-          <Button variant="outline" data-testid="button-filter">
-            <Filter className="h-4 w-4 mr-2" /> Filter
-          </Button>
+          <select
+            value={scoreFilter}
+            onChange={(e) => setScoreFilter(e.target.value as ScoreFilter)}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            data-testid="select-score-filter"
+          >
+            <option value="All">All Leads</option>
+            <option value="Hot">🔴 Hot</option>
+            <option value="Warm">🟡 Warm</option>
+            <option value="Nurture">🟢 Nurture</option>
+          </select>
           <Button data-testid="button-add-client">
             <Plus className="h-4 w-4 mr-2" /> Add Client
           </Button>

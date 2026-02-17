@@ -49,7 +49,8 @@ import prodCleaningCloths from "@/assets/images/prod-cleaning-cloths.png";
 import prodCandleSet from "@/assets/images/prod-candle-set.png";
 import prodLunchBox from "@/assets/images/prod-lunch-box.png";
 
-import type { Product, Category } from "@shared/schema";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import type { Product, Category, FaqItem } from "@shared/schema";
 
 const categoryImages: Record<string, string> = {
   Kitchen: catKitchen,
@@ -199,6 +200,10 @@ export default function LandingPage() {
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+  });
+
+  const { data: faqs = [] } = useQuery<FaqItem[]>({
+    queryKey: ["/api/faqs"],
   });
 
   const categoryProductCounts = categories.map((cat) => ({
@@ -750,6 +755,31 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      {faqs.length > 0 && (
+        <section className="py-20 bg-muted/30" data-testid="section-faq">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <div className="text-center mb-12">
+              <Badge variant="outline" className="mb-4 text-sm px-4 py-1">FAQs</Badge>
+              <h2 className="text-3xl md:text-4xl font-display font-bold mb-4" data-testid="text-faq-title">Frequently Asked Questions</h2>
+              <p className="text-muted-foreground text-lg">Everything you need to know about partnering with Eazy to Sell</p>
+            </div>
+            <Accordion type="single" collapsible className="w-full" data-testid="accordion-faq">
+              {faqs.map((faq) => (
+                <AccordionItem key={faq.id} value={`faq-${faq.id}`} data-testid={`faq-item-${faq.id}`}>
+                  <AccordionTrigger className="text-base font-semibold text-left" data-testid={`faq-trigger-${faq.id}`}>
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed" data-testid={`faq-content-${faq.id}`}>
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+      )}
 
       {/* Final CTA */}
       <section className="py-24 relative overflow-hidden" data-testid="section-cta">

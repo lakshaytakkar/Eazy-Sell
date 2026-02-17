@@ -1,0 +1,1124 @@
+# REPLIT MEGA UPGRADE — Eazy-to-Sell Portal V3
+## Artifact-to-Portal Integration Prompt
+
+> **Context:** We have 30+ business artifacts (PDFs, XLSX, PPTX, DOCX, MD files) that define how our business ACTUALLY operates. The portal must reflect ALL of these. This prompt maps every artifact to a portal feature and specifies exactly what needs to be built.
+
+---
+
+## TECH STACK (Already In Place — Don't Change)
+
+- Frontend: React + Vite + Tailwind + shadcn/ui
+- Backend: Express (server/routes.ts)
+- Database: Supabase (PostgreSQL)
+- Storage: server/storage.ts (Supabase queries with snake/camel conversion)
+- Schema: shared/schema.ts (Zod)
+- Routing: wouter
+- State: @tanstack/react-query
+
+---
+
+## CROSS-REFERENCE: ARTIFACTS → PORTAL FEATURES
+
+This table is the **source of truth** for what's built vs what's missing.
+
+### A. BYOF Core Artifacts (19 documents)
+
+| # | Artifact | Current Portal Status | What's Needed | Priority |
+|---|----------|----------------------|---------------|----------|
+| 01 | Program Brochure (PDF) | Landing page exists but generic | Download link on landing page + client portal | P2 |
+| 02 | Scope & Boundaries (PDF) | ❌ NOT IN PORTAL | Dedicated page OR auto-attached to proposals | P1 |
+| 03 | Partner Qualification Form (PDF) | ❌ NOT IN PORTAL | **ONLINE FORM** with auto lead-scoring | P0 |
+| 04 | Investment Packages (PDF) | ROI calculator is partial | Interactive package comparison page | P1 |
+| 05 | FAQ & Objection Handler (PDF) | ❌ NOT IN PORTAL | FAQ section on landing page + internal sales view | P2 |
+| 06 | Store Launch Timeline (PDF) | Client dashboard is basic | Visual timeline tracker per client | P1 |
+| 07 | Sales Playbook (PDF, INTERNAL) | ❌ NOT IN PORTAL | Internal sales dashboard with scripts + scoring | P1 |
+| 08 | Operator Playbook (PDF, INTERNAL) | ❌ NOT IN PORTAL | Internal ops checklists viewable per client | P2 |
+| 09 | Store Readiness Checklist (PDF) | ❌ NOT IN PORTAL | **DIGITAL CHECKLIST** per client with % completion | P1 |
+| 10 | QC & Substitution Rules (PDF) | ❌ NOT IN PORTAL | QC module in admin: defect tracking, supplier scores | P2 |
+| 11 | Partner Agreement (PDF) | ❌ NOT IN PORTAL | Digital agreement: download + upload signed copy | P1 |
+| 12 | SKU Master & Bundles (XLSX) | Product catalog exists but basic | Bundle builder + category mix planner + margin formulas | P0 |
+| 13 | Vendor Pipeline (XLSX) | ❌ NOT IN PORTAL | Vendor management module with scorecard | P2 |
+| 14 | Lead Tracker / CRM (XLSX) | Admin clients page is basic | Full CRM: lead scoring, 9 pipeline stages, follow-up calendar | P0 |
+| 15 | Unit Economics Calculator (XLSX) | ROI calculator is partial | Proper scenario comparison (Conservative/Base/Optimistic) | P1 |
+| 16 | Pitch Deck (PPTX) | ❌ NOT IN PORTAL | Embedded viewer or download link in sales tools | P3 |
+| 17 | WhatsApp Messages (MD) | ❌ NOT IN PORTAL | Template library with copy-to-clipboard per stage | P1 |
+| 18 | Visual Prompts (MD) | ❌ NOT IN PORTAL | Asset library page (nice-to-have) | P3 |
+
+### B. Zone Partner Artifacts (7 documents)
+
+| # | Artifact | Current Portal Status | What's Needed | Priority |
+|---|----------|----------------------|---------------|----------|
+| Z1 | Zone Partner Economics Calculator (XLSX) | ❌ NOT IN PORTAL | Zone partner ROI calculator page | P2 |
+| Z2 | Zone Partner Pitch Deck (DOCX) | ❌ NOT IN PORTAL | Download from zone partner section | P3 |
+| Z3 | Zone Partner LOI (DOCX) | ❌ NOT IN PORTAL | Digital LOI generator with form fill | P2 |
+| Z4 | Zone Partner SOP (MD) | ❌ NOT IN PORTAL | Internal ops reference page | P3 |
+| Z5 | Warehouse Readiness Checklist (MD) | ❌ NOT IN PORTAL | Digital checklist with scoring (70/100 pass) | P2 |
+| Z6 | Zone Partner FAQ (MD) | ❌ NOT IN PORTAL | FAQ page in zone partner section | P3 |
+| Z7 | Zone Partner WhatsApp Messages (MD) | ❌ NOT IN PORTAL | Template library (same system as #17) | P3 |
+
+### C. Legal / Partnership Documents
+
+| # | Artifact | Current Portal Status | What's Needed | Priority |
+|---|----------|----------------------|---------------|----------|
+| L1 | Partnership Agreement (3 founders) | ❌ NOT IN PORTAL | Admin-only: document vault | P3 |
+
+### D. Technical Gaps (from Portal Audit)
+
+| # | Gap | Current Status | What's Needed | Priority |
+|---|-----|---------------|---------------|----------|
+| T1 | Price Calculator Engine | ❌ MISSING | EXW Yuan → INR full chain calculation | P0 |
+| T2 | Real Authentication | Fake login only | Supabase Auth with roles (admin/client) | P0 |
+| T3 | Admin Product Add/Edit | Can't add products | Full form with live price breakdown | P0 |
+| T4 | Catalog Price Band Filters | ❌ MISSING | Filter by ₹10-99, ₹100-199, ₹200-499, ₹500-999 | P1 |
+| T5 | Admin Price Settings | ❌ MISSING | Global settings page (exchange rate, freight, markup) | P0 |
+| T6 | Client-Specific Dashboard | Hardcoded to client 1 | Dynamic per logged-in client | P0 |
+| T7 | Mobile Optimization | Basic responsive | Touch-friendly, mobile-first for WhatsApp links | P2 |
+
+---
+
+## IMPLEMENTATION PLAN (Ordered by Priority)
+
+### PHASE 1: CORE ENGINE (P0 — Do First, Everything Depends On This)
+
+These are blockers. Nothing else works without them.
+
+#### 1.1 Price Calculator Engine (Artifact T1)
+
+**Source:** Artifact #12 (SKU Master margin formulas) + Artifact #15 (Unit Economics)
+
+Replace current flat `costPrice`/`mrp` with full sourcing chain.
+
+**New Product Schema** (replace in `shared/schema.ts`):
+
+```typescript
+export interface Product {
+  id: number;
+  name: string;
+  categoryId: number;
+  image: string | null;
+  
+  // === SOURCING INPUTS (admin enters) ===
+  exwPriceYuan: number;           // Factory price in ¥
+  unitsPerCarton: number;         // Pieces per carton
+  cartonLengthCm: number;        // Carton L
+  cartonWidthCm: number;         // Carton W
+  cartonHeightCm: number;        // Carton H
+  cartonWeightKg: number | null;
+  moq: number | null;            // Minimum order qty
+  supplierName: string | null;
+  hsCode: string | null;         // Customs classification
+  
+  // === AUTO-CALCULATED (server computes, stored for queries) ===
+  fobPriceYuan: number | null;        // EXW + sourcing commission
+  fobPriceInr: number | null;         // FOB × exchange rate
+  cbmPerUnit: number | null;          // Volume per piece
+  freightPerUnit: number | null;      // CBM × freight rate
+  cifPriceInr: number | null;         // FOB INR + freight + insurance
+  customsDuty: number | null;         // CIF × duty %
+  swSurcharge: number | null;         // Duty × 10% (govt fixed)
+  igst: number | null;                // (CIF + duty + SW) × IGST %
+  totalLandedCost: number | null;     // Our true cost
+  storeLandingPrice: number | null;   // Landed + our markup = partner pays
+  suggestedMrp: number | null;        // Nearest MRP band for 50% store margin
+  storeMarginPercent: number | null;
+  storeMarginRs: number | null;
+  
+  // === CATALOG FIELDS ===
+  priceBand: string | null;     // "10-99" | "100-199" | "200-499" | "500-999"
+  bundleIds: number[] | null;   // Which bundles this product belongs to
+  tags: string[] | null;
+  status: string;               // Active | Draft | Discontinued
+}
+```
+
+**Price Engine** (`server/priceEngine.ts`):
+
+```typescript
+export interface GlobalPriceSettings {
+  exchangeRate: number;          // Default: 12.0 (¥ to ₹)
+  sourcingCommissionPercent: number;  // Default: 5%
+  freightPerCbmInr: number;     // Default: 8000
+  insurancePercent: number;      // Default: 0.5%
+  swSurchargePercent: number;    // Default: 10% (govt fixed)
+  ourMarkupPercent: number;      // Default: 25%
+  targetStoreMarginPercent: number;  // Default: 50%
+}
+
+export function calculatePrices(
+  exwYuan: number,
+  unitsPerCarton: number,
+  cartonL: number, cartonW: number, cartonH: number,
+  categoryDutyPercent: number,
+  categoryIgstPercent: number,
+  settings: GlobalPriceSettings
+) {
+  const fobYuan = exwYuan * (1 + settings.sourcingCommissionPercent / 100);
+  const fobInr = fobYuan * settings.exchangeRate;
+  
+  const cbmPerCarton = (cartonL * cartonW * cartonH) / 1_000_000;
+  const cbmPerUnit = cbmPerCarton / unitsPerCarton;
+  const freightPerUnit = cbmPerUnit * settings.freightPerCbmInr;
+  
+  const insuranceInr = fobInr * (settings.insurancePercent / 100);
+  const cifInr = fobInr + freightPerUnit + insuranceInr;
+  
+  const customsDuty = cifInr * (categoryDutyPercent / 100);
+  const swSurcharge = customsDuty * (settings.swSurchargePercent / 100);
+  const igst = (cifInr + customsDuty + swSurcharge) * (categoryIgstPercent / 100);
+  
+  const totalLandedCost = cifInr + customsDuty + swSurcharge + igst;
+  const storeLandingPrice = totalLandedCost * (1 + settings.ourMarkupPercent / 100);
+  
+  // Snap to nearest MRP band
+  const rawMrp = storeLandingPrice / (1 - settings.targetStoreMarginPercent / 100);
+  const suggestedMrp = snapToMrpBand(rawMrp);
+  
+  const storeMarginRs = suggestedMrp - storeLandingPrice;
+  const storeMarginPercent = (storeMarginRs / suggestedMrp) * 100;
+  
+  // Assign price band
+  const priceBand = suggestedMrp < 100 ? "10-99" 
+    : suggestedMrp < 200 ? "100-199"
+    : suggestedMrp < 500 ? "200-499" 
+    : "500-999";
+
+  return {
+    fobPriceYuan: round2(fobYuan),
+    fobPriceInr: round2(fobInr),
+    cbmPerUnit: round4(cbmPerUnit),
+    freightPerUnit: round2(freightPerUnit),
+    cifPriceInr: round2(cifInr),
+    customsDuty: round2(customsDuty),
+    swSurcharge: round2(swSurcharge),
+    igst: round2(igst),
+    totalLandedCost: round2(totalLandedCost),
+    storeLandingPrice: round2(storeLandingPrice),
+    suggestedMrp: round2(suggestedMrp),
+    storeMarginPercent: round1(storeMarginPercent),
+    storeMarginRs: round2(storeMarginRs),
+    priceBand
+  };
+}
+
+function snapToMrpBand(raw: number): number {
+  const bands = [29, 39, 49, 59, 69, 79, 99, 129, 149, 179, 199, 249, 299, 349, 399, 449, 499, 599, 699, 799, 899, 999];
+  return bands.find(b => b >= raw) || Math.ceil(raw / 10) * 10 - 1;
+}
+
+function round2(n: number) { return Math.round(n * 100) / 100; }
+function round4(n: number) { return Math.round(n * 10000) / 10000; }
+function round1(n: number) { return Math.round(n * 10) / 10; }
+```
+
+#### 1.2 Real Authentication (Artifact T2)
+
+Replace fake login with Supabase Auth.
+
+**Roles:**
+- `admin` — full access (Lakshay, Suprans, team)
+- `client` — sees only their own store, catalog, payments
+- `zone_partner` — (future) sees zone-specific data
+
+**Implementation:**
+- Use Supabase Auth with email/password
+- Store role in `users` table or Supabase custom claims
+- Add auth middleware to Express: `requireAuth()`, `requireRole('admin')`
+- Client dashboard reads `req.user.id` to show only their data
+- Login page at `/login`, redirect based on role
+
+#### 1.3 Admin Product Add/Edit Form (Artifact T3)
+
+**Source:** Artifact #12 (SKU Master fields) + Artifact #10 (QC status)
+
+Create a full product form at `/admin/products/new` and `/admin/products/:id/edit`.
+
+**Form Sections:**
+1. **Basic Info** — Name, Category (dropdown), Image upload, Status, Tags
+2. **Sourcing** — EXW Price (¥), Units/Carton, Carton dimensions (L×W×H cm), Weight, MOQ, Supplier Name, HS Code
+3. **Price Breakdown** (auto-calculated, read-only, updates live as sourcing fields change):
+   - FOB ¥ → FOB ₹ → CBM/unit → Freight/unit → CIF ₹ → Duty → SW → IGST → **Landed Cost** → **Store Landing Price** → **Suggested MRP** → **Store Margin %**
+4. **Bundle Assignment** — Multi-select checkboxes for bundles (Starter, Full, Premium, Seasonal, Impulse)
+
+**Live Preview:** As admin types EXW price and carton dims, the price breakdown updates in real-time on the right panel. This is the most important UX feature — it's how we demo the product to investors.
+
+#### 1.4 Admin Price Settings Page (Artifact T5)
+
+**Source:** Price engine global defaults
+
+New page at `/admin/settings`.
+
+**Fields (with defaults):**
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Exchange Rate (¥ → ₹) | 12.0 | Updated manually when rate changes |
+| Sourcing Commission % | 5% | Allen's commission |
+| Freight per CBM (₹) | 8,000 | Khushal's rate |
+| Insurance % | 0.5% | On FOB value |
+| SW Surcharge % | 10% | Govt fixed on customs duty |
+| Our Markup % | 25% | Eazy-to-Sell margin |
+| Target Store Margin % | 50% | For MRP suggestion |
+
+**Behavior:** When any setting changes, show "Recalculate All Products" button. On click, re-run price engine for ALL products and update their calculated fields.
+
+#### 1.5 Client-Specific Dashboard (Artifact T6)
+
+**Source:** Artifact #06 (Timeline) + Artifact #09 (Readiness Checklist)
+
+Currently hardcoded to client 1. Fix:
+- Read `req.user.clientId` from auth
+- Show only that client's data: store info, launch progress, catalog, payments
+- Admin can view any client by switching in admin panel
+
+#### 1.6 Full CRM / Lead Tracker (Artifact T3 form + Artifact #14 Lead Tracker)
+
+**Source:** Artifact #14 (Lead Tracker XLSX) + Artifact #07 (Sales Playbook lead scoring)
+
+Replace basic admin clients page with full pipeline management.
+
+**Lead/Client Schema** (update `shared/schema.ts`):
+
+```typescript
+export interface Client {
+  id: number;
+  userId: number | null;
+  name: string;
+  city: string;
+  state: string;
+  phone: string | null;
+  email: string | null;
+  
+  // Pipeline
+  stage: string;  // "New Inquiry" | "Qualification Sent" | "Discovery Call" | "Proposal Sent" | "Negotiation" | "Token Paid" | "In Execution" | "Launched" | "Lost"
+  leadSource: string | null;  // WhatsApp | Referral | Social Media | Walk-in | Website
+  
+  // Lead Scoring (from Artifact #07 Sales Playbook)
+  scoreBudget: number | null;      // 1-3 (1=unclear, 2=partial, 3=full budget ready)
+  scoreLocation: number | null;    // 1-3 (1=no location, 2=searching, 3=location secured)
+  scoreOperator: number | null;    // 1-3 (1=passive investor, 2=hiring operator, 3=owner-operated)
+  scoreTimeline: number | null;    // 1-3 (1=>3 months, 2=1-3 months, 3=<1 month)
+  scoreExperience: number | null;  // 1-3 (1=none, 2=some business, 3=retail experience)
+  scoreEngagement: number | null;  // 1-3 (1=low, 2=moderate, 3=high engagement)
+  totalScore: number | null;       // Auto-sum (15+ = Hot, 10-14 = Warm, <10 = Nurture)
+  
+  // Package
+  selectedPackage: string | null;  // "Lite" | "Pro" | "Elite"
+  
+  // Financial
+  totalInvestment: number | null;
+  totalPaid: number | null;
+  totalDue: number | null;
+  
+  // Store Details
+  storeAddress: string | null;
+  storeArea: number | null;  // sq ft
+  storeFrontage: number | null;  // ft
+  
+  // Execution Tracking
+  launchPhase: string | null;  // "Planning" | "Interior Kit" | "Inventory" | "Setup" | "Launched"
+  estimatedLaunchDate: string | null;
+  actualLaunchDate: string | null;
+  
+  // Follow-up
+  nextAction: string | null;
+  nextActionDate: string | null;
+  assignedTo: string | null;  // Team member name
+  
+  // Qualification
+  qualificationFormCompleted: boolean;
+  scopeDocShared: boolean;
+  agreementSigned: boolean;
+  
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**Admin CRM Page** (`/admin/clients`):
+
+1. **Pipeline View (Default)** — Kanban board with columns for each stage. Cards show: name, city, score badge (🔴🟡🟢), package, next action date. Drag-and-drop between stages.
+
+2. **Table View** — Sortable/filterable table with all fields. Quick filters: Hot/Warm/Nurture, by stage, by city, by assigned team member.
+
+3. **Client Detail Page** (`/admin/clients/:id`):
+   - Header: Name, city, score, stage badge, package
+   - Tab 1: **Profile** — All contact/store info, editable
+   - Tab 2: **Scoring** — 6 scoring sliders (1-3), auto-calculates total, shows Hot/Warm/Nurture
+   - Tab 3: **Timeline** — Visual 5-phase progress bar (from Artifact #06), with dates
+   - Tab 4: **Readiness Checklist** — Digital version of Artifact #09 (see 2.2 below)
+   - Tab 5: **Payments** — Payment milestones (30/30/30/10), status per milestone
+   - Tab 6: **Documents** — Upload/download: qualification form, scope doc, agreement, photos
+   - Tab 7: **Notes** — Activity log with timestamps
+
+---
+
+### PHASE 2: OPERATIONAL TOOLS (P1 — Build After Phase 1)
+
+#### 2.1 Online Qualification Form (Artifact #03)
+
+**Source:** Artifact #03 (Partner Qualification Form PDF)
+
+New PUBLIC page at `/apply` or `/qualify` (no login required).
+
+**Form Sections** (from the PDF):
+
+**Section A: Basic Details**
+- Full Name, Phone, Email, City, State
+- Current Occupation
+- Have you run a business before? (Y/N + details)
+
+**Section B: Business Readiness**
+- Available investment amount (dropdown: <₹8L / ₹8-10L / ₹10-15L / ₹15L+)
+- Timeline to start (dropdown: <1 month / 1-3 months / 3-6 months / >6 months)
+- Will you operate the store yourself? (Yes / Hiring someone / Passive investor)
+- Are you exploring other franchise/retail options? (Y/N)
+
+**Section C: Location**
+- Do you have a location? (Yes/Searching/Not yet)
+- If yes: Address, Area (sq ft), Floor, Frontage (ft)
+- Monthly rent budget
+
+**Section D: Expectations**
+- What attracted you to this program?
+- Expected monthly revenue (dropdown: <₹2L / ₹2-4L / ₹4-6L / ₹6L+)
+- Do you understand this is NOT a franchise? (Yes / Need clarification)
+
+**On Submit:**
+1. Auto-calculate lead score (map answers to 1-3 per factor)
+2. Create entry in `clients` table with stage = "New Inquiry"
+3. Send WhatsApp notification to admin (use webhook or email)
+4. Show thank-you page with "We'll contact you within 24 hours"
+5. Landing page links to this form
+
+#### 2.2 Digital Store Readiness Checklist (Artifact #09)
+
+**Source:** Artifact #09 (Store Readiness Checklist PDF)
+
+Embedded in client detail page, Tab 4.
+
+**Checklist Categories** (from the PDF):
+
+```
+INFRASTRUCTURE (12 items)
+□ Electrical connection (5KW minimum)
+□ Flooring complete and clean
+□ Walls painted (white or light color)
+□ Ceiling done (false ceiling or painted)
+□ Main shutter/door installed and lockable
+□ Washroom functional
+□ Storage area identified
+□ Signage spot identified
+□ Lighting installed (min 300 lux)
+□ AC/fan/ventilation installed
+□ Fire extinguisher placed
+□ Internet connection active
+
+FIXTURES & FURNITURE (8 items)
+□ Wall racks installed (as per planogram)
+□ Center display tables placed
+□ Checkout counter installed
+□ Pegboard walls mounted
+□ Gondola units placed
+□ Price tag holders on all racks
+□ Shopping baskets (min 20)
+□ Carry bags stocked
+
+INVENTORY (6 items)
+□ Opening inventory received
+□ All cartons opened and checked
+□ Products sorted by category
+□ Products placed on shelves per planogram
+□ Price tags on all products
+□ Damaged/defective items reported
+
+BILLING & SYSTEMS (5 items)
+□ POS/billing software installed
+□ Barcode scanner working
+□ UPI QR code displayed
+□ Cash register/drawer ready
+□ GST registration number displayed
+
+STAFF (4 items)
+□ Min 1 staff trained on billing
+□ Min 1 staff trained on product placement
+□ Staff uniform/dress code defined
+□ Opening/closing checklist briefed
+
+LEGAL & COMPLIANCE (4 items)
+□ Shop & Establishment license
+□ GST registration
+□ Trade license (if applicable)
+□ FSSAI (if selling food items)
+
+LAUNCH DAY PREP (5 items)
+□ Grand opening banner/flex
+□ Opening day offers planned
+□ WhatsApp broadcast list ready
+□ Google Maps listing created
+□ Photographer/videographer arranged
+```
+
+**UI:** Grouped sections with checkboxes. Show % complete per section and overall. Admin can check items. Client can view (read-only). Green when 100%.
+
+#### 2.3 Interactive Package Comparison (Artifact #04)
+
+**Source:** Artifact #04 (Investment Packages PDF)
+
+Enhance the existing ROI calculator page.
+
+**Package Cards:**
+
+| Feature | Launch Lite (₹8-10L) | Launch Pro (₹10-15L) | Launch Elite (₹15L+) |
+|---------|------|------|------|
+| SKUs | ~2,000 | ~3,500 | ~5,000+ |
+| Layout | Template | Custom | Custom + Merchandising |
+| Planogram | Basic | Detailed | Premium with seasonal refresh |
+| Interior Kit | Standard racks | Premium fixtures | Premium + signage + branding |
+| Support | 7-day email | 30-day phone + WhatsApp | 90-day dedicated manager |
+| Sourcing Concierge | ❌ | ❌ | ✅ Quarterly refresh |
+| Training | Video guides | 1-day on-site | 2-day on-site + refresher |
+
+**Interactive ROI Calculator** (from Artifact #15):
+
+Input sliders:
+- Daily footfall: 50-200 (default 80)
+- Conversion rate: 30%-80% (default 60%)
+- Average transaction value: ₹100-500 (default ₹250)
+- Gross margin: 40%-70% (default 55%)
+- Monthly rent: ₹10K-50K (default ₹25K)
+- Staff cost: ₹10K-40K (default ₹20K)
+- Utilities: ₹3K-15K (default ₹5K)
+
+Output (live updating):
+- Monthly revenue
+- Monthly gross profit
+- Monthly operating cost
+- Monthly net profit
+- Payback period (months)
+- Annual ROI %
+- Scenario toggle: Conservative / Base / Optimistic (from Artifact #15)
+
+#### 2.4 Visual Timeline Tracker (Artifact #06)
+
+**Source:** Artifact #06 (Store Launch Timeline PDF)
+
+In client dashboard, show a horizontal 5-phase progress bar:
+
+```
+[Planning] → [Interior Kit] → [Inventory] → [Setup] → [🎉 Launch]
+  Week 1        Week 2        Week 2-3      Week 3-4     Week 4-6
+```
+
+Each phase shows:
+- Status: Not Started / In Progress / Complete
+- Key tasks within that phase (collapsible)
+- Estimated vs actual dates
+- Admin can update phase status; client sees it live
+
+#### 2.5 WhatsApp Template Library (Artifact #17)
+
+**Source:** Artifact #17 (WhatsApp Pitch Messages MD)
+
+New page at `/admin/templates` (admin only).
+
+**9 Templates** (from the artifact):
+1. Cold Intro
+2. After Interest Shown
+3. Qualification Prompt
+4. After Discovery Call
+5. Objection: Too Expensive
+6. Objection: Is This Franchise?
+7. Urgency / Follow-Up
+8. Referral Ask
+9. Status Update
+
+**UI per template:**
+- Preview card showing the formatted message
+- "Copy to Clipboard" button
+- Optional: client name merge field (replace `{name}` with selected client)
+- Filter by stage (which templates to use at which pipeline stage)
+
+#### 2.6 Partner Agreement Module (Artifact #11)
+
+**Source:** Artifact #11 (Partner Agreement PDF)
+
+In client detail page, Documents tab:
+
+1. Admin clicks "Generate Agreement" → pre-fills partner name, city, package, investment amount into template
+2. Download as PDF
+3. Upload signed copy (photo/scan)
+4. Track status: Draft / Sent / Signed / Active
+
+#### 2.7 Catalog Price Band Filters (Artifact T4)
+
+**Source:** Artifact #08 (Operator Playbook pricing bands)
+
+Add filter bar to product catalog page:
+
+**Filters:**
+- Price Band: ₹10-99 | ₹100-199 | ₹200-499 | ₹500-999 (multi-select)
+- Category: All 11 categories (from Artifact #08)
+- Bundle: Starter | Full | Premium | Seasonal | Impulse
+- Status: Active | Draft | Discontinued
+- Search by name
+
+**Category List** (from Artifact #08):
+1. Kitchen & Dining (15%)
+2. Storage & Organization (12%)
+3. Personal Care & Beauty (10%)
+4. Stationery & Office (10%)
+5. Home Décor & Accessories (10%)
+6. Toys & Games (10%)
+7. Bags & Travel (8%)
+8. Electronics & Gadgets (8%)
+9. Seasonal & Festival (7%)
+10. Cleaning & Household (10%)
+
+---
+
+### PHASE 3: ADVANCED FEATURES (P2 — Build After Phase 2)
+
+#### 3.1 Bundle Builder (Artifact #12)
+
+**Source:** Artifact #12 (SKU Master & Bundles XLSX)
+
+New admin page at `/admin/bundles`.
+
+**Pre-defined Bundles:**
+| Bundle | SKU Count | Purpose |
+|--------|-----------|---------|
+| Starter Pack | ~500 | Minimum viable opening (Launch Lite) |
+| Full Opening | ~2000 | Standard opening (Launch Pro) |
+| Premium Opening | ~3500 | Complete assortment (Launch Elite) |
+| Seasonal Refresh | ~200 | Quarterly rotation products |
+| Impulse/Checkout | ~100 | Counter/checkout zone products |
+
+**UI:**
+- Create/edit bundle: name, description, target SKU count
+- Add products to bundle (search + multi-select)
+- Auto-calculate bundle total cost and suggested value
+- Category mix visualization (pie chart showing % per category vs target mix from Artifact #08)
+- Export bundle as Excel or PDF for partner review
+
+#### 3.2 Vendor Management Module (Artifact #13)
+
+**Source:** Artifact #13 (Vendor Pipeline XLSX) + Artifact #10 (QC Rules)
+
+New admin page at `/admin/vendors`.
+
+**Vendor Schema:**
+```typescript
+export interface Vendor {
+  id: number;
+  name: string;
+  contactPerson: string | null;
+  phone: string | null;
+  email: string | null;
+  location: string;  // City/Region
+  country: string;   // "China" | "India" | "Other"
+  categories: string[];  // Which product categories they supply
+  leadTimeDays: number | null;
+  moqUnits: number | null;
+  paymentTerms: string | null;
+  
+  // Scorecard (from Artifact #13)
+  scoreDefectRate: number | null;    // 1-10 (weight: 30%)
+  scoreOnTime: number | null;       // 1-10 (weight: 25%)
+  scorePricing: number | null;      // 1-10 (weight: 20%)
+  scoreCommunication: number | null; // 1-10 (weight: 15%)
+  scorePackaging: number | null;    // 1-10 (weight: 10%)
+  totalScore: number | null;        // Weighted average
+  tier: string | null;              // "Preferred" (8+) | "Approved" (6-8) | "Probation" (<6)
+  
+  status: string;  // Active | Inactive | Blacklisted
+  notes: string | null;
+}
+```
+
+**UI:**
+- Table with sort by score/tier
+- Scorecard editor per vendor (5 sliders, auto-calculates weighted total)
+- Link products to vendors
+- Color-coded tier badges
+
+#### 3.3 Internal Sales Dashboard (Artifact #07)
+
+**Source:** Artifact #07 (Sales Playbook)
+
+New admin page at `/admin/sales`.
+
+**Sections:**
+1. **Pipeline Summary** — Cards showing count + value at each stage
+2. **Hot Leads** — Auto-filtered: score ≥15, sorted by next action date
+3. **Follow-Up Calendar** — Today's follow-ups, overdue items (red), upcoming
+4. **Conversion Metrics** — Inquiry→Token %, Token→Launch %, avg days per stage
+5. **Discovery Call Script** — Expandable reference panel (from Artifact #07)
+6. **Objection Library** — Searchable (from Artifact #05 + #07)
+
+#### 3.4 FAQ Section on Landing Page (Artifact #05)
+
+**Source:** Artifact #05 (FAQ & Objection Handler)
+
+Add accordion FAQ section to landing page. Key questions:
+
+1. What is the Store Launch Program?
+2. Is this a franchise?
+3. How much investment is needed?
+4. How long does it take to launch?
+5. What's included in the package?
+6. What do I need to provide?
+7. Can I choose my own products?
+8. What if I need more inventory later?
+9. Do you guarantee revenue?
+10. What happens if my store doesn't work out?
+11. Who handles staff and daily operations?
+12. How do I get started?
+
+#### 3.5 QC & Defect Tracking (Artifact #10)
+
+**Source:** Artifact #10 (QC & Substitution Rules)
+
+Admin page at `/admin/qc`.
+
+**Features:**
+- Log QC inspections per shipment
+- Defect classification: Critical / Major / Minor / Packaging
+- Track defect rate per vendor (feeds into vendor scorecard)
+- Substitution requests: log what was substituted, partner approval status
+- Batch reject alerts (>5% defect rate)
+
+#### 3.6 Zone Partner Section (Artifacts Z1-Z7)
+
+New section at `/zone-partners` (future, only if zone model launches).
+
+- Zone Partner ROI Calculator (from Z1 economics)
+- Application form (similar to partner qualification)
+- Warehouse Readiness Checklist (from Z5, with 70/100 pass score)
+- Document downloads (pitch, LOI, SOP, FAQ)
+
+#### 3.7 Scope & Boundaries Page (Artifact #02)
+
+**Source:** Artifact #02 (Scope & Boundaries PDF)
+
+**CRITICAL:** This document prevents disputes. It must be:
+1. Available as a standalone page at `/scope` (public, no login)
+2. Auto-attached to every proposal sent to clients
+3. Required reading before payment (checkbox: "I have read and understood the Scope & Boundaries")
+4. Downloadable as PDF from client dashboard
+
+**Content** (from Artifact #02):
+- What We Do (deliverables list)
+- What We Do NOT Do (exclusions list)
+- Your Responsibilities (partner obligations)
+- Success Conditions (what makes this work)
+- Common Misconceptions (franchise clarification)
+
+---
+
+### PHASE 4: NICE-TO-HAVE (P3)
+
+- Embedded pitch deck viewer (Artifact #16)
+- Visual asset library with Nano Banana prompts (Artifact #18)
+- Document vault for founders (Artifact L1)
+- Airtable sync management UI
+- WhatsApp direct-send integration (vs clipboard copy)
+- Client mobile app (PWA)
+- Zone Partner portal section
+
+---
+
+## DATABASE MIGRATIONS
+
+### Migration 1: Product Schema Upgrade
+
+```sql
+-- Add sourcing fields to products
+ALTER TABLE products ADD COLUMN exw_price_yuan DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN units_per_carton INTEGER;
+ALTER TABLE products ADD COLUMN carton_length_cm DECIMAL(8,2);
+ALTER TABLE products ADD COLUMN carton_width_cm DECIMAL(8,2);
+ALTER TABLE products ADD COLUMN carton_height_cm DECIMAL(8,2);
+ALTER TABLE products ADD COLUMN carton_weight_kg DECIMAL(8,2);
+ALTER TABLE products ADD COLUMN moq INTEGER;
+ALTER TABLE products ADD COLUMN supplier_name TEXT;
+ALTER TABLE products ADD COLUMN hs_code TEXT;
+
+-- Add calculated fields
+ALTER TABLE products ADD COLUMN fob_price_yuan DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN fob_price_inr DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN cbm_per_unit DECIMAL(10,6);
+ALTER TABLE products ADD COLUMN freight_per_unit DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN cif_price_inr DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN customs_duty DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN sw_surcharge DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN igst DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN total_landed_cost DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN store_landing_price DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN suggested_mrp DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN store_margin_percent DECIMAL(5,1);
+ALTER TABLE products ADD COLUMN store_margin_rs DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN price_band TEXT;
+ALTER TABLE products ADD COLUMN bundle_ids INTEGER[];
+
+-- Update categories with duty/GST
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS duty_percent DECIMAL(5,2) DEFAULT 0;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS gst_percent DECIMAL(5,2) DEFAULT 18;
+```
+
+### Migration 2: Client Schema Upgrade
+
+```sql
+-- Add CRM fields to clients
+ALTER TABLE clients ADD COLUMN state TEXT;
+ALTER TABLE clients ADD COLUMN lead_source TEXT;
+ALTER TABLE clients ADD COLUMN score_budget INTEGER;
+ALTER TABLE clients ADD COLUMN score_location INTEGER;
+ALTER TABLE clients ADD COLUMN score_operator INTEGER;
+ALTER TABLE clients ADD COLUMN score_timeline INTEGER;
+ALTER TABLE clients ADD COLUMN score_experience INTEGER;
+ALTER TABLE clients ADD COLUMN score_engagement INTEGER;
+ALTER TABLE clients ADD COLUMN total_score INTEGER;
+ALTER TABLE clients ADD COLUMN selected_package TEXT;
+ALTER TABLE clients ADD COLUMN total_investment DECIMAL(12,2);
+ALTER TABLE clients ADD COLUMN store_frontage DECIMAL(6,1);
+ALTER TABLE clients ADD COLUMN launch_phase TEXT DEFAULT 'Planning';
+ALTER TABLE clients ADD COLUMN estimated_launch_date DATE;
+ALTER TABLE clients ADD COLUMN actual_launch_date DATE;
+ALTER TABLE clients ADD COLUMN next_action_date DATE;
+ALTER TABLE clients ADD COLUMN assigned_to TEXT;
+ALTER TABLE clients ADD COLUMN qualification_form_completed BOOLEAN DEFAULT FALSE;
+ALTER TABLE clients ADD COLUMN scope_doc_shared BOOLEAN DEFAULT FALSE;
+ALTER TABLE clients ADD COLUMN agreement_signed BOOLEAN DEFAULT FALSE;
+ALTER TABLE clients ADD COLUMN notes TEXT;
+ALTER TABLE clients ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE clients ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+```
+
+### Migration 3: New Tables
+
+```sql
+-- Global price settings
+CREATE TABLE price_settings (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  exchange_rate DECIMAL(6,2) DEFAULT 12.0,
+  sourcing_commission_percent DECIMAL(5,2) DEFAULT 5.0,
+  freight_per_cbm_inr DECIMAL(10,2) DEFAULT 8000,
+  insurance_percent DECIMAL(5,2) DEFAULT 0.5,
+  sw_surcharge_percent DECIMAL(5,2) DEFAULT 10.0,
+  our_markup_percent DECIMAL(5,2) DEFAULT 25.0,
+  target_store_margin_percent DECIMAL(5,2) DEFAULT 50.0,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO price_settings DEFAULT VALUES;
+
+-- Bundles
+CREATE TABLE bundles (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  target_sku_count INTEGER,
+  status TEXT DEFAULT 'Active'
+);
+INSERT INTO bundles (name, description, target_sku_count) VALUES
+  ('Starter Pack', 'Minimum viable opening (Launch Lite)', 500),
+  ('Full Opening', 'Standard opening (Launch Pro)', 2000),
+  ('Premium Opening', 'Complete assortment (Launch Elite)', 3500),
+  ('Seasonal Refresh', 'Quarterly rotation products', 200),
+  ('Impulse/Checkout', 'Counter/checkout zone products', 100);
+
+-- Vendors
+CREATE TABLE vendors (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  contact_person TEXT,
+  phone TEXT,
+  email TEXT,
+  location TEXT,
+  country TEXT DEFAULT 'China',
+  categories TEXT[],
+  lead_time_days INTEGER,
+  moq_units INTEGER,
+  payment_terms TEXT,
+  score_defect_rate INTEGER,
+  score_on_time INTEGER,
+  score_pricing INTEGER,
+  score_communication INTEGER,
+  score_packaging INTEGER,
+  total_score DECIMAL(4,1),
+  tier TEXT,
+  status TEXT DEFAULT 'Active',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Store readiness checklist items
+CREATE TABLE checklist_items (
+  id SERIAL PRIMARY KEY,
+  client_id INTEGER REFERENCES clients(id),
+  section TEXT NOT NULL,
+  item TEXT NOT NULL,
+  completed BOOLEAN DEFAULT FALSE,
+  completed_at TIMESTAMPTZ,
+  completed_by TEXT,
+  notes TEXT
+);
+
+-- WhatsApp templates
+CREATE TABLE whatsapp_templates (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  stage TEXT,
+  body TEXT NOT NULL,
+  merge_fields TEXT[],
+  sort_order INTEGER DEFAULT 0
+);
+
+-- Client documents
+CREATE TABLE client_documents (
+  id SERIAL PRIMARY KEY,
+  client_id INTEGER REFERENCES clients(id),
+  doc_type TEXT NOT NULL,  -- 'qualification_form' | 'scope_doc' | 'agreement' | 'photo' | 'other'
+  file_url TEXT,
+  file_name TEXT,
+  status TEXT DEFAULT 'Draft',  -- Draft | Sent | Signed | Active
+  uploaded_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+## NEW ROUTES NEEDED
+
+### Public Routes (No Auth)
+```
+GET  /                    → Landing page (exists, add FAQ + qualification CTA)
+GET  /apply               → Online qualification form (NEW)
+POST /api/qualification   → Submit qualification form (NEW)
+GET  /scope               → Scope & Boundaries page (NEW)
+GET  /packages            → Package comparison + ROI calculator (enhance existing)
+```
+
+### Client Routes (Auth: client role)
+```
+GET  /client/dashboard    → Client-specific dashboard with timeline (fix existing)
+GET  /client/catalog      → Catalog with price bands and filters (enhance existing)
+GET  /client/launch-kit   → Launch kit (exists)
+GET  /client/payments     → Payments (exists)
+GET  /client/documents    → View/download documents (NEW)
+GET  /client/checklist    → View readiness checklist (read-only) (NEW)
+```
+
+### Admin Routes (Auth: admin role)
+```
+GET  /admin/dashboard     → Overview: pipeline, revenue, hot leads (enhance existing)
+GET  /admin/clients       → CRM with Kanban + table views (enhance existing)
+GET  /admin/clients/:id   → Client detail with tabs (enhance existing)
+GET  /admin/products      → Product catalog (exists)
+GET  /admin/products/new  → Add product form with price engine (NEW)
+GET  /admin/products/:id  → Edit product (NEW)
+GET  /admin/bundles       → Bundle management (NEW)
+GET  /admin/vendors       → Vendor pipeline with scorecard (NEW)
+GET  /admin/templates     → WhatsApp template library (NEW)
+GET  /admin/sales         → Sales dashboard with pipeline metrics (NEW)
+GET  /admin/qc            → QC tracking (NEW, Phase 3)
+GET  /admin/settings      → Price settings + global config (NEW)
+```
+
+---
+
+## SEED DATA
+
+### Categories (with duty/GST for price engine)
+
+```sql
+INSERT INTO categories (name, duty_percent, gst_percent) VALUES
+  ('Kitchen & Dining', 10, 18),
+  ('Storage & Organization', 10, 18),
+  ('Personal Care & Beauty', 10, 18),
+  ('Stationery & Office', 10, 18),
+  ('Home Décor & Accessories', 10, 18),
+  ('Toys & Games', 20, 12),
+  ('Bags & Travel', 10, 18),
+  ('Electronics & Gadgets', 10, 18),
+  ('Seasonal & Festival', 10, 18),
+  ('Cleaning & Household', 10, 18);
+```
+
+### WhatsApp Templates (from Artifact #17)
+
+```sql
+INSERT INTO whatsapp_templates (name, stage, body, merge_fields, sort_order) VALUES
+('Cold Intro', 'New Inquiry', 'Hi {name}! 👋
+
+I''m reaching out from Eazy-to-Sell. We help entrepreneurs launch their own value retail store — think of it as your own store selling everyday products in the ₹10–999 range.
+
+We handle everything: store layout, interior setup, opening inventory (2000–5000+ products), and ongoing supply.
+
+Your investment: ₹8–15L all-in. Launch in 30–45 days.
+
+Would you like to know more? I can share our program brochure.', '{name}', 1),
+
+('After Interest', 'Qualification Sent', 'Hi {name}! Thanks for your interest in the Store Launch Program. 🙏
+
+Here''s what we include:
+✅ Complete store layout design
+✅ Interior kit (racks, fixtures, signage)
+✅ 2000–5000+ curated products
+✅ Category planning & shelf placement
+✅ Post-launch support (7–90 days)
+
+To take the next step, could you fill out this quick form? It helps us understand your readiness:
+👉 [Qualification Form Link]
+
+No commitment — just helps us prepare the right package for you.', '{name}', 2),
+
+('Qualification Prompt', 'Qualification Sent', 'Hi {name}! Quick follow-up — did you get a chance to fill out the qualification form?
+
+It takes ~5 minutes and helps us:
+1. Recommend the right package for you
+2. Prepare a custom investment breakdown
+3. Check if your location fits our store model
+
+Here''s the link again: 👉 [Qualification Form Link]
+
+Happy to hop on a quick call if you have questions first.', '{name}', 3),
+
+('After Discovery Call', 'Proposal Sent', 'Hi {name}! Great chatting with you today. 🤝
+
+As discussed, here''s what I''m sharing:
+📄 Program Brochure — overview of everything
+📄 Scope & Boundaries — what we do and don''t do (please read carefully)
+📄 Investment & Packages — your package: {package}
+
+Key next steps:
+1. Review the documents (especially Scope & Boundaries)
+2. Confirm your questions
+3. If ready → token payment of ₹1L to lock your slot
+
+Timeline: 30–45 days from confirmation to soft opening.
+
+Questions? Just reply here.', '{name},{package}', 4),
+
+('Objection: Too Expensive', 'Negotiation', 'Hi {name}, I understand the investment feels significant. Let me break it down:
+
+Your ₹{amount}L covers:
+→ Interior kit (racks, fixtures, signage) = your physical assets
+→ Opening inventory (2000+ products) = your stock
+→ Store layout + planning = saves months of trial and error
+→ Post-launch support = we don''t disappear after setup
+
+Compare this to doing it yourself:
+→ Sourcing 2000+ products takes 2–3 months minimum
+→ Finding fixture vendors: another month
+→ Layout mistakes cost ₹50K–1L to fix
+→ We bulk-source from China + India = 20–40% better pricing
+
+The investment is mostly inventory — which is YOUR asset from day one. This isn''t a franchise fee that disappears.
+
+Want to see the detailed cost breakdown?', '{name},{amount}', 5),
+
+('Objection: Is This Franchise?', 'Negotiation', 'Great question, {name}! And an important one. 🙏
+
+This is NOT a franchise. Here''s the difference:
+
+🔴 Franchise = you pay 5–8% royalty forever + brand fees + their pricing rules + their menu
+🟢 Our model = you pay once for setup + inventory, then you own everything
+
+With us:
+✅ No royalties, ever
+✅ No brand license fees
+✅ You set your own prices
+✅ You keep 100% of profits
+✅ You own all inventory and fixtures
+
+We''re a "Store Launch + Supply Partner" — we set you up and stay as your sourcing partner. That''s it.
+
+I''ll also share our Scope & Boundaries document that makes this crystal clear.', '{name}', 6),
+
+('Follow-Up / Urgency', 'Negotiation', 'Hi {name}! Just checking in — any thoughts on the program?
+
+Quick update: we have limited launch slots for {month} as our sourcing team can only handle a few stores at a time with proper quality control.
+
+Current status:
+→ {available} launch slots available this month
+→ Your qualification is complete ✅
+→ Next step: token payment of ₹1L to lock your slot
+
+No pressure — just wanted to keep you updated so you don''t miss the window.
+
+Shall we schedule a quick 10-minute call to address any remaining questions?', '{name},{month},{available}', 7),
+
+('Referral Ask', 'Launched', 'Hi {name}! Hope the store is going well! 🎉
+
+Quick request — do you know anyone else who might be interested in launching their own store?
+
+We offer a referral bonus:
+→ ₹10,000 credit on your next inventory order for every successful referral
+
+If someone comes to mind, just share their number and I''ll reach out (mentioning your name, of course).
+
+Thanks for being part of the Eazy-to-Sell family! 🙌', '{name}', 8),
+
+('Status Update', 'In Execution', 'Hi {name}! Quick update on your store launch:
+
+📍 Current Phase: {phase}
+📅 Estimated Launch: {launch_date}
+
+Progress:
+{checklist_status}
+
+Next step: {next_action}
+
+Everything on track! Will update you again in {days} days.
+
+Questions? Just reply here. 🙏', '{name},{phase},{launch_date},{checklist_status},{next_action},{days}', 9);
+```
+
+---
+
+## CRITICAL RULES FOR ALL PAGES
+
+1. **NEVER use the word "franchise"** anywhere in the portal. Use: "Store Launch Program" / "Partner" / "Store Launch Partner"
+2. **Scope & Boundaries must be shown before any payment** — enforce via `scope_doc_shared` flag
+3. **Qualification form is mandatory** — no client record without it
+4. **Price engine runs on server** — never expose raw Yuan prices or margin calculations to client view. Client sees only: Store Landing Price (what they pay us) and Suggested MRP (what they sell at)
+5. **Lead scoring auto-calculates** — totalScore = sum of 6 scores (each 1-3). Display: 🔴 Hot (15+), 🟡 Warm (10-14), 🟢 Nurture (<10)
+6. **Client view shows only their data** — never leak other client info
+7. **All amounts in ₹ (INR)** — no Yuan visible to clients
+8. **Mobile-first for client pages** — partners will access via WhatsApp links on phone
+
+---
+
+## IMPLEMENTATION ORDER
+
+```
+Week 1: T1 (Price Engine) + T2 (Auth) + T5 (Settings)
+Week 2: T3 (Product Form) + T6 (Client Dashboard) + 1.6 (CRM upgrade)  
+Week 3: 2.1 (Qualification Form) + 2.2 (Checklist) + T4 (Filters)
+Week 4: 2.3 (Packages) + 2.4 (Timeline) + 2.5 (WhatsApp Templates)
+Week 5: 2.6 (Agreement) + 2.7 (Scope Page) + 3.4 (FAQ)
+Week 6: 3.1 (Bundles) + 3.2 (Vendors) + 3.3 (Sales Dashboard)
+```
+
+---
+
+## WHAT CHANGED FROM V2 PROMPT
+
+| V2 Prompt Had | V3 Adds |
+|---------------|---------|
+| 10 upgrades (technical gaps) | 10 upgrades + 15 artifact integrations = 25 features |
+| Price engine + auth + product form | + Qualification form, CRM with scoring, readiness checklist |
+| Basic client management | + Kanban pipeline, 9 stages, scoring, follow-up calendar |
+| No templates | + 9 WhatsApp templates with merge fields |
+| No FAQ | + 12-question FAQ on landing page |
+| No vendor tracking | + Vendor pipeline with weighted scorecard |
+| No bundles | + Bundle builder with category mix visualization |
+| No scope page | + Dedicated Scope & Boundaries page (public) |
+| No agreement module | + Digital agreement generator + tracking |
+| No zone partner features | + Placeholder section for zone partner expansion |
+| No seed data | + Full SQL migrations + seed data + WhatsApp templates |
+| Approximate timeline | + 6-week phased implementation plan |
+
+---
+
+*This prompt integrates ALL 30+ business artifacts into the portal. Every feature maps back to a real document that the team uses in practice. Build in order of priority. Test each phase before moving to next.*

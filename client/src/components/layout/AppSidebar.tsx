@@ -25,7 +25,8 @@ import {
   LogOut,
   ChevronLeft,
   FileText,
-  ClipboardList
+  ClipboardList,
+  MessageSquare
 } from "lucide-react";
 
 const clientNavGroups = [
@@ -60,6 +61,7 @@ const adminNavGroups = [
     items: [
       { label: "Inventory", href: "/admin/products", icon: ShoppingBag },
       { label: "Kit Reviews", href: "/admin/reviews", icon: ClipboardList },
+      { label: "Templates", href: "/admin/templates", icon: MessageSquare },
     ],
   },
 ];

@@ -12,6 +12,8 @@ import { getAvatarUrl } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -51,22 +53,23 @@ import {
   ChevronDown,
   PhoneCall,
   Share2,
+  Target,
+  CheckSquare,
+  Rocket,
 } from "lucide-react";
-import type { Client, Payment } from "@shared/schema";
-import { STAGES } from "@shared/schema";
+import type { Client, Payment, ReadinessChecklistItem, ReadinessChecklistStatus } from "@shared/schema";
+import { PIPELINE_STAGES, LAUNCH_PHASES, getScoreLabel } from "@shared/schema";
 
 const stageColors: Record<string, string> = {
-  Lead: "bg-slate-100 text-slate-700 border-slate-200",
-  "Token Paid": "bg-blue-50 text-blue-700 border-blue-200",
-  "Location Shared": "bg-cyan-50 text-cyan-700 border-cyan-200",
-  "Location Approved": "bg-teal-50 text-teal-700 border-teal-200",
-  "3D Design": "bg-violet-50 text-violet-700 border-violet-200",
-  "Payment Partial": "bg-amber-50 text-amber-700 border-amber-200",
-  "In Production": "bg-orange-50 text-orange-700 border-orange-200",
-  Shipped: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  Setup: "bg-pink-50 text-pink-700 border-pink-200",
-  Launched: "bg-green-50 text-green-700 border-green-200",
-  Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "New Inquiry": "bg-slate-100 text-slate-700 border-slate-200",
+  "Qualification Sent": "bg-blue-50 text-blue-700 border-blue-200",
+  "Discovery Call": "bg-cyan-50 text-cyan-700 border-cyan-200",
+  "Proposal Sent": "bg-violet-50 text-violet-700 border-violet-200",
+  "Negotiation": "bg-amber-50 text-amber-700 border-amber-200",
+  "Token Paid": "bg-teal-50 text-teal-700 border-teal-200",
+  "In Execution": "bg-orange-50 text-orange-700 border-orange-200",
+  "Launched": "bg-green-50 text-green-700 border-green-200",
+  "Lost": "bg-red-50 text-red-700 border-red-200",
 };
 
 function formatCurrency(val: number | null | undefined) {
@@ -140,6 +143,27 @@ export default function ClientDetail() {
     queryKey: [`/api/payments/client/${clientId}`],
   });
 
+  const { data: checklistItems = [] } = useQuery<ReadinessChecklistItem[]>({
+    queryKey: ["/api/checklist/items"],
+  });
+
+  const { data: checklistStatus = [] } = useQuery<ReadinessChecklistStatus[]>({
+    queryKey: [`/api/checklist/${clientId}`],
+  });
+
+  const toggleChecklistMutation = useMutation({
+    mutationFn: async ({ itemId, completed }: { itemId: number; completed: boolean }) => {
+      const res = await apiRequest("POST", `/api/checklist/${clientId}`, { itemId, completed });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/checklist/${clientId}`] });
+    },
+    onError: () => {
+      toast({ title: "Failed to update checklist", variant: "destructive" });
+    },
+  });
+
   const updateStageMutation = useMutation({
     mutationFn: async (newStage: string) => {
       const res = await apiRequest("PATCH", `/api/clients/${clientId}`, { stage: newStage });
@@ -161,8 +185,21 @@ export default function ClientDetail() {
     currentIndex < clients.length - 1 ? clients[currentIndex + 1] : null;
 
   const currentStageIndex = client
-    ? STAGES.indexOf(client.stage as (typeof STAGES)[number])
+    ? PIPELINE_STAGES.indexOf(client.stage as (typeof PIPELINE_STAGES)[number])
     : -1;
+
+  const completedItemIds = new Set(
+    checklistStatus.filter((s) => s.completed).map((s) => s.itemId)
+  );
+  const totalChecklistItems = checklistItems.length;
+  const completedCount = checklistItems.filter((item) => completedItemIds.has(item.id)).length;
+  const checklistPercent = totalChecklistItems > 0 ? Math.round((completedCount / totalChecklistItems) * 100) : 0;
+
+  const checklistByCategory = checklistItems.reduce<Record<string, ReadinessChecklistItem[]>>((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item);
+    return acc;
+  }, {});
 
   if (isLoading) {
     return (
@@ -204,6 +241,21 @@ export default function ClientDetail() {
   const totalPaid = payments
     .filter((p) => p.status === "Paid")
     .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  const scoreLabel = getScoreLabel(client.totalScore);
+
+  const scoreFactors = [
+    { key: "Budget", value: client.scoreBudget },
+    { key: "Location", value: client.scoreLocation },
+    { key: "Operator", value: client.scoreOperator },
+    { key: "Timeline", value: client.scoreTimeline },
+    { key: "Experience", value: client.scoreExperience },
+    { key: "Engagement", value: client.scoreEngagement },
+  ];
+
+  const currentLaunchPhaseIndex = client.launchPhase
+    ? LAUNCH_PHASES.indexOf(client.launchPhase as (typeof LAUNCH_PHASES)[number])
+    : -1;
 
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] w-full overflow-hidden" data-testid="client-detail-page">
@@ -296,7 +348,7 @@ export default function ClientDetail() {
                 </div>
 
                 <div className="flex items-center gap-1 mt-1">
-                  {STAGES.map((stage, i) => (
+                  {PIPELINE_STAGES.map((stage, i) => (
                     <TooltipProvider key={stage}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -448,6 +500,54 @@ export default function ClientDetail() {
 
           <Card className="border rounded-2xl shadow-sm">
             <CardContent className="p-5 space-y-4">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" /> Lead Score
+              </h3>
+              <div className="flex items-center gap-3">
+                <div className="text-3xl font-bold text-foreground" data-testid="text-total-score">
+                  {client.totalScore || 0}
+                </div>
+                <Badge
+                  variant="outline"
+                  className={`text-sm font-medium px-2.5 py-0.5 ${scoreLabel.color}`}
+                  data-testid="badge-score-label"
+                >
+                  {scoreLabel.emoji} {scoreLabel.label}
+                </Badge>
+                {client.selectedPackage && (
+                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200" data-testid="badge-selected-package">
+                    {client.selectedPackage}
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {scoreFactors.map((factor) => (
+                  <div
+                    key={factor.key}
+                    className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg"
+                    data-testid={`score-factor-${factor.key.toLowerCase()}`}
+                  >
+                    <Badge
+                      variant="outline"
+                      className={`h-6 w-6 p-0 flex items-center justify-center text-xs font-bold shrink-0 ${
+                        (factor.value || 0) >= 3
+                          ? "bg-green-100 text-green-700 border-green-300"
+                          : (factor.value || 0) >= 2
+                            ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                            : "bg-slate-100 text-slate-600 border-slate-300"
+                      }`}
+                    >
+                      {factor.value || 0}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground truncate">{factor.key}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border rounded-2xl shadow-sm">
+            <CardContent className="p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                   <Store className="h-4 w-4 text-primary" /> Store Details
@@ -511,13 +611,13 @@ export default function ClientDetail() {
                 <ChevronDown className="h-4 w-4 text-primary" /> Stage Management
               </h3>
               <div className="flex flex-wrap gap-1.5">
-                {STAGES.map((stage, i) => (
+                {PIPELINE_STAGES.map((stage, i) => (
                   <Badge
                     key={stage}
                     variant="outline"
                     className={`text-[10px] cursor-pointer transition-all ${
                       client.stage === stage
-                        ? stageColors[stage] + " ring-2 ring-primary/20 font-semibold"
+                        ? (stageColors[stage] || "") + " ring-2 ring-primary/20 font-semibold"
                         : i <= currentStageIndex
                           ? "opacity-50 hover:opacity-80"
                           : "opacity-30 hover:opacity-60"
@@ -583,6 +683,13 @@ export default function ClientDetail() {
                   data-testid="tab-payments"
                 >
                   <CreditCard className="h-4 w-4 mr-1.5" /> Payments ({payments.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="checklist"
+                  className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground"
+                  data-testid="tab-checklist"
+                >
+                  <CheckSquare className="h-4 w-4 mr-1.5" /> Checklist ({checklistPercent}%)
                 </TabsTrigger>
                 <TabsTrigger
                   value="timeline"
@@ -718,12 +825,113 @@ export default function ClientDetail() {
                 </Card>
               </TabsContent>
 
+              <TabsContent value="checklist" className="h-full mt-0">
+                <Card className="border rounded-2xl shadow-sm h-full flex flex-col overflow-hidden">
+                  <div className="px-5 py-4 border-b shrink-0">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-base font-semibold text-foreground">
+                        Readiness Checklist
+                      </h3>
+                      <Badge variant="outline" className="text-xs" data-testid="badge-checklist-progress">
+                        {completedCount} / {totalChecklistItems} done
+                      </Badge>
+                    </div>
+                    <Progress value={checklistPercent} className="h-2" data-testid="progress-checklist" />
+                    <p className="text-xs text-muted-foreground mt-1.5">{checklistPercent}% complete</p>
+                  </div>
+                  <ScrollArea className="flex-1">
+                    <div className="p-5 space-y-6">
+                      {totalChecklistItems === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground">
+                          <CheckSquare className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
+                          <p className="font-medium">No checklist items</p>
+                          <p className="text-sm mt-1">Checklist items will appear here once configured.</p>
+                        </div>
+                      ) : (
+                        Object.entries(checklistByCategory).map(([category, items]) => {
+                          const categoryDone = items.filter((item) => completedItemIds.has(item.id)).length;
+                          return (
+                            <div key={category} data-testid={`checklist-category-${category.toLowerCase().replace(/\s+/g, "-")}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-semibold text-foreground">{category}</h4>
+                                <span className="text-xs text-muted-foreground">
+                                  {categoryDone} of {items.length} done
+                                </span>
+                              </div>
+                              <div className="space-y-2">
+                                {items
+                                  .sort((a, b) => a.sortOrder - b.sortOrder)
+                                  .map((item) => {
+                                    const isChecked = completedItemIds.has(item.id);
+                                    return (
+                                      <label
+                                        key={item.id}
+                                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer"
+                                        data-testid={`checklist-item-${item.id}`}
+                                      >
+                                        <Checkbox
+                                          checked={isChecked}
+                                          onCheckedChange={(checked) => {
+                                            toggleChecklistMutation.mutate({
+                                              itemId: item.id,
+                                              completed: !!checked,
+                                            });
+                                          }}
+                                          data-testid={`checkbox-item-${item.id}`}
+                                        />
+                                        <span className={`text-sm ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                                          {item.label}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </ScrollArea>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="timeline" className="h-full mt-0">
                 <Card className="border rounded-2xl shadow-sm h-full flex flex-col overflow-hidden">
                   <div className="px-5 py-4 border-b shrink-0">
-                    <h3 className="text-base font-semibold text-foreground">
-                      Activity Timeline
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
+                      <Rocket className="h-4 w-4 text-primary" /> Launch Progress
                     </h3>
+                    <div className="flex items-center gap-0" data-testid="launch-phase-bar">
+                      {LAUNCH_PHASES.map((phase, i) => {
+                        const isActive = i <= currentLaunchPhaseIndex;
+                        const isCurrent = i === currentLaunchPhaseIndex;
+                        return (
+                          <div key={phase} className="flex items-center flex-1">
+                            <div className="flex flex-col items-center gap-1.5 flex-1">
+                              <div
+                                className={`h-4 w-4 rounded-full border-2 shrink-0 transition-colors ${
+                                  isCurrent
+                                    ? "bg-primary border-primary ring-4 ring-primary/20"
+                                    : isActive
+                                      ? "bg-primary border-primary"
+                                      : "bg-muted border-muted-foreground/20"
+                                }`}
+                              />
+                              <span className={`text-[10px] font-medium text-center leading-tight ${
+                                isActive ? "text-primary" : "text-muted-foreground"
+                              }`}>
+                                {phase}
+                              </span>
+                            </div>
+                            {i < LAUNCH_PHASES.length - 1 && (
+                              <div className={`h-0.5 flex-1 -mt-5 ${
+                                i < currentLaunchPhaseIndex ? "bg-primary" : "bg-muted"
+                              }`} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                   <ScrollArea className="flex-1">
                     <div className="p-6 space-y-6">
@@ -739,7 +947,7 @@ export default function ClientDetail() {
                         </div>
                       </div>
 
-                      {client.stage !== "Lead" && (
+                      {client.stage !== "New Inquiry" && (
                         <div className="flex items-start gap-4">
                           <div className="mt-1.5 h-3 w-3 rounded-full bg-blue-500 shrink-0 ring-4 ring-blue-500/10" />
                           <div className="flex-1">
@@ -748,6 +956,20 @@ export default function ClientDetail() {
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               Current pipeline stage
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {client.launchPhase && (
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1.5 h-3 w-3 rounded-full bg-violet-500 shrink-0 ring-4 ring-violet-500/10" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              Launch phase: {client.launchPhase}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {currentLaunchPhaseIndex + 1} of {LAUNCH_PHASES.length} phases
                             </p>
                           </div>
                         </div>
@@ -805,11 +1027,23 @@ export default function ClientDetail() {
                       <Edit3 className="h-3.5 w-3.5 mr-1" /> Add Note
                     </Button>
                   </div>
-                  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6">
-                    <FileText className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                    <p className="font-medium">No notes yet</p>
-                    <p className="text-sm mt-1 text-center">Notes and observations will appear here.</p>
-                  </div>
+                  {client.notes ? (
+                    <ScrollArea className="flex-1">
+                      <div className="p-6">
+                        <div className="bg-muted/30 rounded-xl border p-4" data-testid="text-client-notes">
+                          <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+                            {client.notes}
+                          </pre>
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6">
+                      <FileText className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                      <p className="font-medium">No notes yet</p>
+                      <p className="text-sm mt-1 text-center">Notes and observations will appear here.</p>
+                    </div>
+                  )}
                 </Card>
               </TabsContent>
             </div>
