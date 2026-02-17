@@ -72,8 +72,11 @@ export default function LaunchKit() {
     },
   });
 
-  const totalInvestment = cart.reduce((acc, item) => acc + (item.product.costPrice * item.quantity), 0);
-  const totalMRP = cart.reduce((acc, item) => acc + (item.product.mrp * item.quantity), 0);
+  const getPrice = (p: any) => p.storeLandingPrice ?? p.costPrice ?? 0;
+  const getMrp = (p: any) => p.suggestedMrp ?? p.mrp ?? 0;
+
+  const totalInvestment = cart.reduce((acc, item) => acc + (getPrice(item.product) * item.quantity), 0);
+  const totalMRP = cart.reduce((acc, item) => acc + (getMrp(item.product) * item.quantity), 0);
   const potentialProfit = totalMRP - totalInvestment;
   const avgMargin = totalMRP > 0 ? (potentialProfit / totalMRP) * 100 : 0;
   
@@ -83,9 +86,9 @@ export default function LaunchKit() {
      const catName = categoryMap[item.product.categoryId] || "Other";
      const found = acc.find(x => x.name === catName);
      if (found) {
-         found.value += item.product.costPrice * item.quantity;
+         found.value += getPrice(item.product) * item.quantity;
      } else {
-         acc.push({ name: catName, value: item.product.costPrice * item.quantity });
+         acc.push({ name: catName, value: getPrice(item.product) * item.quantity });
      }
      return acc;
   }, [] as {name: string, value: number}[]);
@@ -148,8 +151,8 @@ export default function LaunchKit() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                         <div className="text-sm font-medium">{formatCurrency(item.product.costPrice)}</div>
-                                         <div className="text-xs text-muted-foreground">MRP: {formatCurrency(item.product.mrp)}</div>
+                                         <div className="text-sm font-medium">{formatCurrency(getPrice(item.product))}</div>
+                                         <div className="text-xs text-muted-foreground">MRP: {formatCurrency(getMrp(item.product))}</div>
                                     </TableCell>
                                     <TableCell>
                                         <Input 
@@ -165,7 +168,7 @@ export default function LaunchKit() {
                                         />
                                     </TableCell>
                                     <TableCell className="text-right font-medium">
-                                        {formatCurrency(item.product.costPrice * item.quantity)}
+                                        {formatCurrency(getPrice(item.product) * item.quantity)}
                                     </TableCell>
                                     <TableCell>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItemMutation.mutate(item.kitItem.id)} data-testid={`button-remove-${item.kitItem.id}`}>

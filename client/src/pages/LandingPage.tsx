@@ -89,14 +89,18 @@ const quickFilters = [
   { label: "Durable", image: filterDurable },
 ];
 
-function getMarginMultiplier(costPrice: number, mrp: number): string {
-  const ratio = mrp / costPrice;
+function getMarginMultiplier(price: number, mrp: number): string {
+  if (!price || price <= 0) return "5x";
+  const ratio = mrp / price;
   if (ratio >= 4) return "20x";
   if (ratio >= 3) return "10x";
   if (ratio >= 2.5) return "5x";
   if (ratio >= 2) return "3x";
   return "2x";
 }
+
+function getProductPrice(p: any) { return p.storeLandingPrice ?? p.costPrice ?? 0; }
+function getProductMrp(p: any) { return p.suggestedMrp ?? p.mrp ?? 0; }
 
 function formatINR(amount: number): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
@@ -294,8 +298,10 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {(products.length > 0 ? products.slice(0, 8) : []).map((product) => {
-              const marginMultiplier = getMarginMultiplier(product.costPrice, product.mrp);
-              const marginPercent = Math.round(((product.mrp - product.costPrice) / product.mrp) * 100);
+              const price = getProductPrice(product);
+              const mrp = getProductMrp(product);
+              const marginMultiplier = getMarginMultiplier(price, mrp);
+              const marginPercent = mrp > 0 ? Math.round(((mrp - price) / mrp) * 100) : 0;
               const localImage = productImages[product.id];
               return (
                 <Card key={product.id} className="overflow-hidden border shadow-sm" data-testid={`product-card-${product.id}`}>
@@ -323,13 +329,13 @@ export default function LandingPage() {
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">MRP</span>
-                        <span className="text-sm font-bold" data-testid={`text-product-mrp-${product.id}`}>{formatINR(product.mrp)}</span>
+                        <span className="text-sm font-bold" data-testid={`text-product-mrp-${product.id}`}>{formatINR(mrp)}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Partner Price</span>
                         <div className="flex items-center gap-1.5" data-testid={`text-product-locked-price-${product.id}`}>
                           <div className="relative">
-                            <span className="text-sm font-bold text-green-600 blur-[5px] select-none">{formatINR(product.costPrice)}</span>
+                            <span className="text-sm font-bold text-green-600 blur-[5px] select-none">{formatINR(price)}</span>
                           </div>
                           <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                         </div>

@@ -65,7 +65,7 @@ const adminNavGroups = [
 ];
 
 const bottomItems = [
-  { label: "Settings", href: "#", icon: Settings },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
   { label: "Help Center", href: "#", icon: HelpCircle },
 ];
 

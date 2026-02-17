@@ -25,14 +25,18 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export interface Category {
   id: number;
   name: string;
+  customsDutyPercent: number;
+  igstPercent: number;
+  hsCode: string | null;
   dutyPercent: number | null;
   gstPercent: number | null;
 }
 
 export const insertCategorySchema = z.object({
   name: z.string().min(1),
-  dutyPercent: z.number().nullable().optional().default(0),
-  gstPercent: z.number().nullable().optional().default(18),
+  customsDutyPercent: z.number().default(0),
+  igstPercent: z.number().default(18),
+  hsCode: z.string().nullable().optional(),
 });
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 
@@ -41,8 +45,34 @@ export interface Product {
   name: string;
   categoryId: number;
   image: string | null;
-  costPrice: number;
-  mrp: number;
+
+  exwPriceYuan: number;
+  unitsPerCarton: number;
+  cartonLengthCm: number;
+  cartonWidthCm: number;
+  cartonHeightCm: number;
+  cartonWeightKg: number | null;
+  moq: number | null;
+  supplierName: string | null;
+  hsCode: string | null;
+
+  fobPriceYuan: number | null;
+  fobPriceInr: number | null;
+  cbmPerUnit: number | null;
+  freightPerUnit: number | null;
+  cifPriceInr: number | null;
+  customsDuty: number | null;
+  swSurcharge: number | null;
+  igst: number | null;
+  totalLandedCost: number | null;
+  storeLandingPrice: number | null;
+  suggestedMrp: number | null;
+  storeMarginPercent: number | null;
+  storeMarginRs: number | null;
+
+  costPrice: number | null;
+  mrp: number | null;
+
   tags: string[] | null;
   status: string;
 }
@@ -51,8 +81,15 @@ export const insertProductSchema = z.object({
   name: z.string().min(1),
   categoryId: z.number(),
   image: z.string().nullable().optional(),
-  costPrice: z.number(),
-  mrp: z.number(),
+  exwPriceYuan: z.number().default(0),
+  unitsPerCarton: z.number().default(1),
+  cartonLengthCm: z.number().default(0),
+  cartonWidthCm: z.number().default(0),
+  cartonHeightCm: z.number().default(0),
+  cartonWeightKg: z.number().nullable().optional(),
+  moq: z.number().nullable().optional(),
+  supplierName: z.string().nullable().optional(),
+  hsCode: z.string().nullable().optional(),
   tags: z.array(z.string()).nullable().optional().default([]),
   status: z.string().default("Active"),
 });
@@ -176,3 +213,14 @@ export const STAGES = [
   'Launched',
   'Active'
 ] as const;
+
+export const PRODUCT_TAGS = [
+  'Bestseller',
+  'New Arrival',
+  'Recommended',
+  'Seasonal',
+  'High Margin',
+  'Fast Mover',
+] as const;
+
+export const MRP_BANDS = [29, 49, 79, 99, 129, 149, 199, 249, 299, 399, 499, 599, 799, 999] as const;

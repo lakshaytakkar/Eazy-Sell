@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { calculatePrices, DEFAULT_SETTINGS, type PriceInputs } from "./priceEngine";
 import type {
   User, InsertUser,
   Category, InsertCategory,
@@ -40,6 +41,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
 
   getCategories(): Promise<Category[]>;
+  getCategory(id: number): Promise<Category | undefined>;
   createCategory(cat: InsertCategory): Promise<Category>;
   updateCategory(id: number, cat: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: number): Promise<void>;
@@ -73,7 +75,12 @@ export interface IStorage {
   updatePayment(id: number, pay: Partial<InsertPayment>): Promise<Payment | undefined>;
 
   getPriceSettings(): Promise<PriceSetting[]>;
+  getSettingsMap(): Promise<Record<string, number>>;
   upsertPriceSetting(setting: InsertPriceSetting): Promise<PriceSetting>;
+
+  recalculateProduct(productId: number): Promise<Product | undefined>;
+  recalculateAllProducts(): Promise<number>;
+  recalculateCategoryProducts(categoryId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -97,6 +104,11 @@ export class DatabaseStorage implements IStorage {
     const { data, error } = await supabase.from("categories").select("*");
     if (error) throw new Error(error.message);
     return (data ?? []).map(snakeToCamel);
+  }
+
+  async getCategory(id: number): Promise<Category | undefined> {
+    const { data } = await supabase.from("categories").select("*").eq("id", id).single();
+    return data ? snakeToCamel(data) : undefined;
   }
 
   async createCategory(cat: InsertCategory): Promise<Category> {
@@ -127,13 +139,69 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(prod: InsertProduct): Promise<Product> {
-    const { data, error } = await supabase.from("products").insert(camelToSnake(prod)).select().single();
+    const settings = await this.getSettingsMap();
+    const category = await this.getCategory(prod.categoryId);
+
+    const snakeData: any = camelToSnake(prod);
+
+    if (prod.exwPriceYuan && prod.exwPriceYuan > 0 && category) {
+      const priceInputs: PriceInputs = {
+        exwPriceYuan: prod.exwPriceYuan,
+        unitsPerCarton: prod.unitsPerCarton || 1,
+        cartonLengthCm: prod.cartonLengthCm || 0,
+        cartonWidthCm: prod.cartonWidthCm || 0,
+        cartonHeightCm: prod.cartonHeightCm || 0,
+        categoryDutyPercent: category.customsDutyPercent ?? 0,
+        categoryIgstPercent: category.igstPercent ?? 18,
+        exchangeRate: settings.exchange_rate,
+        sourcingCommission: settings.sourcing_commission,
+        freightPerCbm: settings.freight_per_cbm,
+        insurancePercent: settings.insurance_percent,
+        swSurchargePercent: settings.sw_surcharge_percent,
+        ourMarkupPercent: settings.our_markup_percent,
+        targetStoreMargin: settings.target_store_margin,
+      };
+      const calc = calculatePrices(priceInputs);
+      Object.assign(snakeData, camelToSnake(calc));
+    }
+
+    const { data, error } = await supabase.from("products").insert(snakeData).select().single();
     if (error) throw new Error(error.message);
     return snakeToCamel(data);
   }
 
   async updateProduct(id: number, prod: Partial<InsertProduct>): Promise<Product | undefined> {
-    const { data, error } = await supabase.from("products").update(camelToSnake(prod)).eq("id", id).select().single();
+    const existing = await this.getProduct(id);
+    if (!existing) return undefined;
+
+    const merged = { ...existing, ...prod };
+    const settings = await this.getSettingsMap();
+    const category = await this.getCategory(merged.categoryId);
+
+    const snakeData: any = camelToSnake(prod);
+
+    if (merged.exwPriceYuan && merged.exwPriceYuan > 0 && category) {
+      const priceInputs: PriceInputs = {
+        exwPriceYuan: merged.exwPriceYuan,
+        unitsPerCarton: merged.unitsPerCarton || 1,
+        cartonLengthCm: merged.cartonLengthCm || 0,
+        cartonWidthCm: merged.cartonWidthCm || 0,
+        cartonHeightCm: merged.cartonHeightCm || 0,
+        categoryDutyPercent: category.customsDutyPercent ?? 0,
+        categoryIgstPercent: category.igstPercent ?? 18,
+        exchangeRate: settings.exchange_rate,
+        sourcingCommission: settings.sourcing_commission,
+        freightPerCbm: settings.freight_per_cbm,
+        insurancePercent: settings.insurance_percent,
+        swSurchargePercent: settings.sw_surcharge_percent,
+        ourMarkupPercent: settings.our_markup_percent,
+        targetStoreMargin: settings.target_store_margin,
+      };
+      const calc = calculatePrices(priceInputs);
+      Object.assign(snakeData, camelToSnake(calc));
+    }
+
+    const { data, error } = await supabase.from("products").update(snakeData).eq("id", id).select().single();
     if (error) return undefined;
     return snakeToCamel(data);
   }
@@ -266,6 +334,15 @@ export class DatabaseStorage implements IStorage {
     return (data ?? []).map(snakeToCamel);
   }
 
+  async getSettingsMap(): Promise<Record<string, number>> {
+    const settings = await this.getPriceSettings();
+    const map: Record<string, number> = { ...DEFAULT_SETTINGS };
+    for (const s of settings) {
+      map[s.key] = parseFloat(s.value) || DEFAULT_SETTINGS[s.key] || 0;
+    }
+    return map;
+  }
+
   async upsertPriceSetting(setting: InsertPriceSetting): Promise<PriceSetting> {
     const { data: existing } = await supabase.from("price_settings").select("*").eq("key", setting.key);
 
@@ -283,6 +360,66 @@ export class DatabaseStorage implements IStorage {
     const { data, error } = await supabase.from("price_settings").insert(setting).select().single();
     if (error) throw new Error(error.message);
     return snakeToCamel(data);
+  }
+
+  async recalculateProduct(productId: number): Promise<Product | undefined> {
+    const product = await this.getProduct(productId);
+    if (!product) return undefined;
+
+    const settings = await this.getSettingsMap();
+    const category = await this.getCategory(product.categoryId);
+    if (!category || !product.exwPriceYuan || product.exwPriceYuan <= 0) return product;
+
+    const priceInputs: PriceInputs = {
+      exwPriceYuan: product.exwPriceYuan,
+      unitsPerCarton: product.unitsPerCarton || 1,
+      cartonLengthCm: product.cartonLengthCm || 0,
+      cartonWidthCm: product.cartonWidthCm || 0,
+      cartonHeightCm: product.cartonHeightCm || 0,
+      categoryDutyPercent: category.customsDutyPercent ?? 0,
+      categoryIgstPercent: category.igstPercent ?? 18,
+      exchangeRate: settings.exchange_rate,
+      sourcingCommission: settings.sourcing_commission,
+      freightPerCbm: settings.freight_per_cbm,
+      insurancePercent: settings.insurance_percent,
+      swSurchargePercent: settings.sw_surcharge_percent,
+      ourMarkupPercent: settings.our_markup_percent,
+      targetStoreMargin: settings.target_store_margin,
+    };
+
+    const calc = calculatePrices(priceInputs);
+    const { data, error } = await supabase
+      .from("products")
+      .update(camelToSnake(calc))
+      .eq("id", productId)
+      .select()
+      .single();
+    if (error) return undefined;
+    return snakeToCamel(data);
+  }
+
+  async recalculateAllProducts(): Promise<number> {
+    const products = await this.getProducts();
+    let count = 0;
+    for (const p of products) {
+      if (p.exwPriceYuan && p.exwPriceYuan > 0) {
+        await this.recalculateProduct(p.id);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async recalculateCategoryProducts(categoryId: number): Promise<number> {
+    const { data: products } = await supabase.from("products").select("id, exw_price_yuan").eq("category_id", categoryId);
+    let count = 0;
+    for (const p of (products ?? [])) {
+      if (p.exw_price_yuan && p.exw_price_yuan > 0) {
+        await this.recalculateProduct(p.id);
+        count++;
+      }
+    }
+    return count;
   }
 }
 

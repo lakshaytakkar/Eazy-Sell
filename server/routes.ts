@@ -16,7 +16,6 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
-  // ─── Categories ────────────────────────────────────────────
   app.get("/api/categories", async (_req, res) => {
     const cats = await storage.getCategories();
     res.json(cats);
@@ -32,6 +31,10 @@ export async function registerRoutes(
   app.patch("/api/categories/:id", async (req, res) => {
     const cat = await storage.updateCategory(Number(req.params.id), req.body);
     if (!cat) return res.status(404).json({ error: "Not found" });
+    if (req.body.customsDutyPercent !== undefined || req.body.igstPercent !== undefined) {
+      const count = await storage.recalculateCategoryProducts(Number(req.params.id));
+      return res.json({ ...cat, recalculatedProducts: count });
+    }
     res.json(cat);
   });
 
@@ -40,7 +43,6 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // ─── Products ──────────────────────────────────────────────
   app.get("/api/products", async (_req, res) => {
     const prods = await storage.getProducts();
     res.json(prods);
@@ -59,6 +61,31 @@ export async function registerRoutes(
     res.status(201).json(prod);
   });
 
+  app.post("/api/products/bulk", async (req, res) => {
+    try {
+      const products = req.body.products;
+      if (!Array.isArray(products)) return res.status(400).json({ error: "products array required" });
+      const results = [];
+      const errors = [];
+      for (let i = 0; i < products.length; i++) {
+        const parsed = insertProductSchema.safeParse(products[i]);
+        if (!parsed.success) {
+          errors.push({ row: i + 1, error: parsed.error.message });
+          continue;
+        }
+        try {
+          const prod = await storage.createProduct(parsed.data);
+          results.push(prod);
+        } catch (err: any) {
+          errors.push({ row: i + 1, error: err.message });
+        }
+      }
+      res.json({ imported: results.length, errors: errors.length, details: errors });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.patch("/api/products/:id", async (req, res) => {
     const prod = await storage.updateProduct(Number(req.params.id), req.body);
     if (!prod) return res.status(404).json({ error: "Not found" });
@@ -70,7 +97,15 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // ─── Clients ───────────────────────────────────────────────
+  app.post("/api/recalculate-all", async (_req, res) => {
+    try {
+      const count = await storage.recalculateAllProducts();
+      res.json({ message: `Recalculated ${count} products`, count });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/clients", async (_req, res) => {
     const cls = await storage.getClients();
     res.json(cls);
@@ -100,7 +135,6 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // ─── Launch Kit Items ──────────────────────────────────────
   app.get("/api/kit-items/:clientId", async (req, res) => {
     const items = await storage.getKitItems(Number(req.params.clientId));
     res.json(items);
@@ -123,7 +157,6 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // ─── Launch Kit Submissions ────────────────────────────────
   app.get("/api/submissions", async (_req, res) => {
     const subs = await storage.getSubmissions();
     res.json(subs);
@@ -147,7 +180,6 @@ export async function registerRoutes(
     res.json(sub);
   });
 
-  // ─── Payments ──────────────────────────────────────────────
   app.get("/api/payments", async (_req, res) => {
     const pays = await storage.getAllPayments();
     res.json(pays);
@@ -171,10 +203,14 @@ export async function registerRoutes(
     res.json(pay);
   });
 
-  // ─── Price Settings ────────────────────────────────────────
   app.get("/api/settings", async (_req, res) => {
     const settings = await storage.getPriceSettings();
     res.json(settings);
+  });
+
+  app.get("/api/settings/map", async (_req, res) => {
+    const map = await storage.getSettingsMap();
+    res.json(map);
   });
 
   app.post("/api/settings", async (req, res) => {
@@ -184,7 +220,6 @@ export async function registerRoutes(
     res.json(setting);
   });
 
-  // ─── Airtable Sync endpoint ───────────────────────────────
   app.post("/api/sync-airtable", async (_req, res) => {
     try {
       const airtableToken = process.env.AIRTABLE_API_TOKEN;
@@ -326,7 +361,6 @@ export async function registerRoutes(
     }
   });
 
-  // ─── Seed endpoint ─────────────────────────────────────────
   app.post("/api/seed", async (_req, res) => {
     try {
       const existingProducts = await storage.getProducts();
@@ -335,15 +369,15 @@ export async function registerRoutes(
       }
 
       const catData = [
-        { name: "Kitchen", dutyPercent: 5, gstPercent: 18 },
-        { name: "Stationery", dutyPercent: 0, gstPercent: 12 },
-        { name: "Toys", dutyPercent: 10, gstPercent: 18 },
-        { name: "Decor", dutyPercent: 5, gstPercent: 18 },
-        { name: "Storage", dutyPercent: 5, gstPercent: 18 },
-        { name: "Bags", dutyPercent: 10, gstPercent: 18 },
-        { name: "Bathroom", dutyPercent: 5, gstPercent: 18 },
-        { name: "Cleaning", dutyPercent: 0, gstPercent: 12 },
-        { name: "Gifts", dutyPercent: 5, gstPercent: 18 },
+        { name: "Kitchen", customsDutyPercent: 5, igstPercent: 18 },
+        { name: "Stationery", customsDutyPercent: 0, igstPercent: 12 },
+        { name: "Toys", customsDutyPercent: 10, igstPercent: 18 },
+        { name: "Decor", customsDutyPercent: 5, igstPercent: 18 },
+        { name: "Storage", customsDutyPercent: 5, igstPercent: 18 },
+        { name: "Bags", customsDutyPercent: 10, igstPercent: 18 },
+        { name: "Bathroom", customsDutyPercent: 5, igstPercent: 18 },
+        { name: "Cleaning", customsDutyPercent: 0, igstPercent: 12 },
+        { name: "Gifts", customsDutyPercent: 5, igstPercent: 18 },
       ];
       const createdCats: Record<string, number> = {};
       for (const c of catData) {
@@ -352,16 +386,16 @@ export async function registerRoutes(
       }
 
       const prodData = [
-        { name: "Premium Glass Water Bottle Set", categoryId: createdCats["Kitchen"], image: "https://images.unsplash.com/photo-1602143407151-01114192003b?auto=format&fit=crop&q=80&w=500", costPrice: 250, mrp: 699, tags: ["Bestseller", "High Margin"], status: "Active" },
-        { name: "Stackable Storage Bins (Set of 3)", categoryId: createdCats["Storage"], image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=500", costPrice: 450, mrp: 1299, tags: ["Recommended"], status: "Active" },
-        { name: "Minimalist Desk Organizer", categoryId: createdCats["Stationery"], image: "https://images.unsplash.com/photo-1520970014086-2208d15799f0?auto=format&fit=crop&q=80&w=500", costPrice: 180, mrp: 499, tags: ["New"], status: "Active" },
-        { name: "Kids Educational Building Blocks", categoryId: createdCats["Toys"], image: "https://images.unsplash.com/photo-1587654780291-39c940483713?auto=format&fit=crop&q=80&w=500", costPrice: 350, mrp: 899, tags: ["Kids", "Seasonal"], status: "Active" },
-        { name: "Ceramic Flower Vase", categoryId: createdCats["Decor"], image: "https://images.unsplash.com/photo-1581783342308-f792ca11df53?auto=format&fit=crop&q=80&w=500", costPrice: 120, mrp: 399, tags: ["High Margin"], status: "Active" },
-        { name: "Canvas Tote Bag", categoryId: createdCats["Bags"], image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=500", costPrice: 85, mrp: 299, tags: ["Eco Friendly", "Bestseller"], status: "Active" },
-        { name: "Bamboo Bathroom Set", categoryId: createdCats["Bathroom"], image: "https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&q=80&w=500", costPrice: 550, mrp: 1499, tags: ["Luxury"], status: "Active" },
-        { name: "Microfiber Cleaning Cloths (Pack of 5)", categoryId: createdCats["Cleaning"], image: "https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&q=80&w=500", costPrice: 90, mrp: 249, tags: ["Essentials"], status: "Active" },
-        { name: "Scented Soy Candle", categoryId: createdCats["Gifts"], image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&q=80&w=500", costPrice: 140, mrp: 449, tags: ["Gifting", "Seasonal"], status: "Active" },
-        { name: "Stainless Steel Lunch Box", categoryId: createdCats["Kitchen"], image: "https://images.unsplash.com/photo-1594910243285-b1a72d3f232b?auto=format&fit=crop&q=80&w=500", costPrice: 280, mrp: 799, tags: ["Durable"], status: "Active" },
+        { name: "Premium Glass Water Bottle Set", categoryId: createdCats["Kitchen"], image: "https://images.unsplash.com/photo-1602143407151-01114192003b?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 8.5, unitsPerCarton: 24, cartonLengthCm: 50, cartonWidthCm: 40, cartonHeightCm: 35, tags: ["Bestseller", "High Margin"], status: "Active" },
+        { name: "Stackable Storage Bins (Set of 3)", categoryId: createdCats["Storage"], image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 15, unitsPerCarton: 12, cartonLengthCm: 60, cartonWidthCm: 45, cartonHeightCm: 40, tags: ["Recommended"], status: "Active" },
+        { name: "Minimalist Desk Organizer", categoryId: createdCats["Stationery"], image: "https://images.unsplash.com/photo-1520970014086-2208d15799f0?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 6, unitsPerCarton: 36, cartonLengthCm: 55, cartonWidthCm: 40, cartonHeightCm: 30, tags: ["New Arrival"], status: "Active" },
+        { name: "Kids Educational Building Blocks", categoryId: createdCats["Toys"], image: "https://images.unsplash.com/photo-1587654780291-39c940483713?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 12, unitsPerCarton: 20, cartonLengthCm: 55, cartonWidthCm: 45, cartonHeightCm: 40, tags: ["Seasonal"], status: "Active" },
+        { name: "Ceramic Flower Vase", categoryId: createdCats["Decor"], image: "https://images.unsplash.com/photo-1581783342308-f792ca11df53?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 4.5, unitsPerCarton: 48, cartonLengthCm: 50, cartonWidthCm: 40, cartonHeightCm: 35, tags: ["High Margin"], status: "Active" },
+        { name: "Canvas Tote Bag", categoryId: createdCats["Bags"], image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 3.5, unitsPerCarton: 60, cartonLengthCm: 50, cartonWidthCm: 40, cartonHeightCm: 30, tags: ["Bestseller", "Fast Mover"], status: "Active" },
+        { name: "Bamboo Bathroom Set", categoryId: createdCats["Bathroom"], image: "https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 18, unitsPerCarton: 12, cartonLengthCm: 55, cartonWidthCm: 45, cartonHeightCm: 35, tags: ["Recommended"], status: "Active" },
+        { name: "Microfiber Cleaning Cloths (Pack of 5)", categoryId: createdCats["Cleaning"], image: "https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 2.5, unitsPerCarton: 100, cartonLengthCm: 50, cartonWidthCm: 40, cartonHeightCm: 35, tags: ["Fast Mover"], status: "Active" },
+        { name: "Scented Soy Candle", categoryId: createdCats["Gifts"], image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 5, unitsPerCarton: 36, cartonLengthCm: 45, cartonWidthCm: 35, cartonHeightCm: 30, tags: ["Seasonal"], status: "Active" },
+        { name: "Stainless Steel Lunch Box", categoryId: createdCats["Kitchen"], image: "https://images.unsplash.com/photo-1594910243285-b1a72d3f232b?auto=format&fit=crop&q=80&w=500", exwPriceYuan: 10, unitsPerCarton: 24, cartonLengthCm: 50, cartonWidthCm: 40, cartonHeightCm: 30, tags: ["Bestseller"], status: "Active" },
       ];
       for (const p of prodData) {
         await storage.createProduct(p);
@@ -386,10 +420,13 @@ export async function registerRoutes(
       }
 
       const settingsData = [
-        { key: "exchange_rate", value: "83.5", label: "USD/INR Exchange Rate" },
-        { key: "freight_percent", value: "8", label: "Freight % of Cost" },
-        { key: "markup_percent", value: "40", label: "Default Markup %" },
-        { key: "gst_default", value: "18", label: "Default GST %" },
+        { key: "exchange_rate", value: "12.0", label: "Yuan to INR Exchange Rate" },
+        { key: "sourcing_commission", value: "5", label: "Sourcing Commission %" },
+        { key: "freight_per_cbm", value: "8000", label: "Freight Rate per CBM (INR)" },
+        { key: "insurance_percent", value: "0.5", label: "Insurance % of FOB" },
+        { key: "sw_surcharge_percent", value: "10", label: "Social Welfare Surcharge %" },
+        { key: "our_markup_percent", value: "25", label: "Our Markup %" },
+        { key: "target_store_margin", value: "50", label: "Target Store Margin % for MRP" },
       ];
       for (const s of settingsData) {
         await storage.upsertPriceSetting(s);

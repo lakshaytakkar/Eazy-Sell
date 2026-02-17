@@ -27,6 +27,7 @@ import AdminClients from "@/pages/admin/Clients";
 import ClientDetail from "@/pages/admin/ClientDetail";
 import AdminProducts from "@/pages/admin/Products";
 import KitReviews from "@/pages/admin/Reviews";
+import AdminSettings from "@/pages/admin/Settings";
 
 function Router() {
   return (
@@ -95,6 +96,11 @@ function Router() {
       <Route path="/admin/reviews">
         <DashboardLayout userType="admin">
           <KitReviews />
+        </DashboardLayout>
+      </Route>
+      <Route path="/admin/settings">
+        <DashboardLayout userType="admin">
+          <AdminSettings />
         </DashboardLayout>
       </Route>
 
