@@ -1,238 +1,288 @@
-import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
-import {
-  users, type User, type InsertUser,
-  categories, type Category, type InsertCategory,
-  products, type Product, type InsertProduct,
-  clients, type Client, type InsertClient,
-  launchKitItems, type LaunchKitItem, type InsertLaunchKitItem,
-  launchKitSubmissions, type LaunchKitSubmission, type InsertLaunchKitSubmission,
-  payments, type Payment, type InsertPayment,
-  priceSettings, type PriceSetting, type InsertPriceSetting,
+import { supabase } from "./supabase";
+import type {
+  User, InsertUser,
+  Category, InsertCategory,
+  Product, InsertProduct,
+  Client, InsertClient,
+  LaunchKitItem, InsertLaunchKitItem,
+  LaunchKitSubmission, InsertLaunchKitSubmission,
+  Payment, InsertPayment,
+  PriceSetting, InsertPriceSetting,
 } from "@shared/schema";
 
+function snakeToCamel(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) return obj.map(snakeToCamel);
+  if (typeof obj !== "object") return obj;
+  const result: any = {};
+  for (const key in obj) {
+    const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    result[camelKey] = obj[key];
+  }
+  return result;
+}
+
+function camelToSnake(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) return obj.map(camelToSnake);
+  if (typeof obj !== "object") return obj;
+  const result: any = {};
+  for (const key in obj) {
+    const snakeKey = key.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
+    result[snakeKey] = obj[key];
+  }
+  return result;
+}
+
 export interface IStorage {
-  // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
-  // Categories
   getCategories(): Promise<Category[]>;
   createCategory(cat: InsertCategory): Promise<Category>;
   updateCategory(id: number, cat: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: number): Promise<void>;
 
-  // Products
   getProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(prod: InsertProduct): Promise<Product>;
   updateProduct(id: number, prod: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<void>;
 
-  // Clients
   getClients(): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: number): Promise<void>;
 
-  // Launch Kit Items
   getKitItems(clientId: number): Promise<LaunchKitItem[]>;
   upsertKitItem(item: InsertLaunchKitItem): Promise<LaunchKitItem>;
   removeKitItem(id: number): Promise<void>;
   clearKit(clientId: number): Promise<void>;
 
-  // Launch Kit Submissions
   getSubmissions(): Promise<LaunchKitSubmission[]>;
   getSubmission(id: number): Promise<LaunchKitSubmission | undefined>;
   getSubmissionsByClient(clientId: number): Promise<LaunchKitSubmission[]>;
   createSubmission(sub: InsertLaunchKitSubmission): Promise<LaunchKitSubmission>;
   updateSubmission(id: number, sub: Partial<InsertLaunchKitSubmission>): Promise<LaunchKitSubmission | undefined>;
 
-  // Payments
   getPaymentsByClient(clientId: number): Promise<Payment[]>;
   getAllPayments(): Promise<Payment[]>;
   createPayment(pay: InsertPayment): Promise<Payment>;
   updatePayment(id: number, pay: Partial<InsertPayment>): Promise<Payment | undefined>;
 
-  // Price Settings
   getPriceSettings(): Promise<PriceSetting[]>;
   upsertPriceSetting(setting: InsertPriceSetting): Promise<PriceSetting>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // Users
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    const { data } = await supabase.from("users").select("*").eq("id", id).single();
+    return data ? snakeToCamel(data) : undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    const { data } = await supabase.from("users").select("*").eq("username", username).single();
+    return data ? snakeToCamel(data) : undefined;
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const [created] = await db.insert(users).values(user).returning();
-    return created;
+    const { data, error } = await supabase.from("users").insert(camelToSnake(user)).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 
-  // Categories
   async getCategories(): Promise<Category[]> {
-    return db.select().from(categories);
+    const { data, error } = await supabase.from("categories").select("*");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async createCategory(cat: InsertCategory): Promise<Category> {
-    const [created] = await db.insert(categories).values(cat).returning();
-    return created;
+    const { data, error } = await supabase.from("categories").insert(camelToSnake(cat)).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 
   async updateCategory(id: number, cat: Partial<InsertCategory>): Promise<Category | undefined> {
-    const [updated] = await db.update(categories).set(cat).where(eq(categories.id, id)).returning();
-    return updated;
+    const { data, error } = await supabase.from("categories").update(camelToSnake(cat)).eq("id", id).select().single();
+    if (error) return undefined;
+    return snakeToCamel(data);
   }
 
   async deleteCategory(id: number): Promise<void> {
-    await db.delete(categories).where(eq(categories.id, id));
+    await supabase.from("categories").delete().eq("id", id);
   }
 
-  // Products
   async getProducts(): Promise<Product[]> {
-    return db.select().from(products);
+    const { data, error } = await supabase.from("products").select("*");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
-    const [prod] = await db.select().from(products).where(eq(products.id, id));
-    return prod;
+    const { data } = await supabase.from("products").select("*").eq("id", id).single();
+    return data ? snakeToCamel(data) : undefined;
   }
 
   async createProduct(prod: InsertProduct): Promise<Product> {
-    const [created] = await db.insert(products).values(prod).returning();
-    return created;
+    const { data, error } = await supabase.from("products").insert(camelToSnake(prod)).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 
   async updateProduct(id: number, prod: Partial<InsertProduct>): Promise<Product | undefined> {
-    const [updated] = await db.update(products).set(prod).where(eq(products.id, id)).returning();
-    return updated;
+    const { data, error } = await supabase.from("products").update(camelToSnake(prod)).eq("id", id).select().single();
+    if (error) return undefined;
+    return snakeToCamel(data);
   }
 
   async deleteProduct(id: number): Promise<void> {
-    await db.delete(products).where(eq(products.id, id));
+    await supabase.from("products").delete().eq("id", id);
   }
 
-  // Clients
   async getClients(): Promise<Client[]> {
-    return db.select().from(clients);
+    const { data, error } = await supabase.from("clients").select("*");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async getClient(id: number): Promise<Client | undefined> {
-    const [client] = await db.select().from(clients).where(eq(clients.id, id));
-    return client;
+    const { data } = await supabase.from("clients").select("*").eq("id", id).single();
+    return data ? snakeToCamel(data) : undefined;
   }
 
   async createClient(client: InsertClient): Promise<Client> {
-    const [created] = await db.insert(clients).values(client).returning();
-    return created;
+    const { data, error } = await supabase.from("clients").insert(camelToSnake(client)).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 
   async updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined> {
-    const [updated] = await db.update(clients).set(client).where(eq(clients.id, id)).returning();
-    return updated;
+    const { data, error } = await supabase.from("clients").update(camelToSnake(client)).eq("id", id).select().single();
+    if (error) return undefined;
+    return snakeToCamel(data);
   }
 
   async deleteClient(id: number): Promise<void> {
-    await db.delete(clients).where(eq(clients.id, id));
+    await supabase.from("clients").delete().eq("id", id);
   }
 
-  // Launch Kit Items
   async getKitItems(clientId: number): Promise<LaunchKitItem[]> {
-    return db.select().from(launchKitItems).where(eq(launchKitItems.clientId, clientId));
+    const { data, error } = await supabase.from("launch_kit_items").select("*").eq("client_id", clientId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async upsertKitItem(item: InsertLaunchKitItem): Promise<LaunchKitItem> {
-    const existing = await db.select().from(launchKitItems)
-      .where(and(eq(launchKitItems.clientId, item.clientId), eq(launchKitItems.productId, item.productId)));
-    
-    if (existing.length > 0) {
-      const [updated] = await db.update(launchKitItems)
-        .set({ quantity: item.quantity })
-        .where(eq(launchKitItems.id, existing[0].id))
-        .returning();
-      return updated;
+    const snakeItem = camelToSnake(item);
+    const { data: existing } = await supabase
+      .from("launch_kit_items")
+      .select("*")
+      .eq("client_id", snakeItem.client_id)
+      .eq("product_id", snakeItem.product_id);
+
+    if (existing && existing.length > 0) {
+      const { data, error } = await supabase
+        .from("launch_kit_items")
+        .update({ quantity: snakeItem.quantity })
+        .eq("id", existing[0].id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return snakeToCamel(data);
     }
 
-    const [created] = await db.insert(launchKitItems).values(item).returning();
-    return created;
+    const { data, error } = await supabase.from("launch_kit_items").insert(snakeItem).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 
   async removeKitItem(id: number): Promise<void> {
-    await db.delete(launchKitItems).where(eq(launchKitItems.id, id));
+    await supabase.from("launch_kit_items").delete().eq("id", id);
   }
 
   async clearKit(clientId: number): Promise<void> {
-    await db.delete(launchKitItems).where(eq(launchKitItems.clientId, clientId));
+    await supabase.from("launch_kit_items").delete().eq("client_id", clientId);
   }
 
-  // Launch Kit Submissions
   async getSubmissions(): Promise<LaunchKitSubmission[]> {
-    return db.select().from(launchKitSubmissions).orderBy(desc(launchKitSubmissions.submittedAt));
+    const { data, error } = await supabase.from("launch_kit_submissions").select("*").order("submitted_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async getSubmission(id: number): Promise<LaunchKitSubmission | undefined> {
-    const [sub] = await db.select().from(launchKitSubmissions).where(eq(launchKitSubmissions.id, id));
-    return sub;
+    const { data } = await supabase.from("launch_kit_submissions").select("*").eq("id", id).single();
+    return data ? snakeToCamel(data) : undefined;
   }
 
   async getSubmissionsByClient(clientId: number): Promise<LaunchKitSubmission[]> {
-    return db.select().from(launchKitSubmissions).where(eq(launchKitSubmissions.clientId, clientId));
+    const { data, error } = await supabase.from("launch_kit_submissions").select("*").eq("client_id", clientId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async createSubmission(sub: InsertLaunchKitSubmission): Promise<LaunchKitSubmission> {
-    const [created] = await db.insert(launchKitSubmissions).values(sub).returning();
-    return created;
+    const { data, error } = await supabase.from("launch_kit_submissions").insert(camelToSnake(sub)).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 
   async updateSubmission(id: number, sub: Partial<InsertLaunchKitSubmission>): Promise<LaunchKitSubmission | undefined> {
-    const [updated] = await db.update(launchKitSubmissions).set(sub).where(eq(launchKitSubmissions.id, id)).returning();
-    return updated;
+    const { data, error } = await supabase.from("launch_kit_submissions").update(camelToSnake(sub)).eq("id", id).select().single();
+    if (error) return undefined;
+    return snakeToCamel(data);
   }
 
-  // Payments
   async getPaymentsByClient(clientId: number): Promise<Payment[]> {
-    return db.select().from(payments).where(eq(payments.clientId, clientId));
+    const { data, error } = await supabase.from("payments").select("*").eq("client_id", clientId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async getAllPayments(): Promise<Payment[]> {
-    return db.select().from(payments);
+    const { data, error } = await supabase.from("payments").select("*");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async createPayment(pay: InsertPayment): Promise<Payment> {
-    const [created] = await db.insert(payments).values(pay).returning();
-    return created;
+    const { data, error } = await supabase.from("payments").insert(camelToSnake(pay)).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 
   async updatePayment(id: number, pay: Partial<InsertPayment>): Promise<Payment | undefined> {
-    const [updated] = await db.update(payments).set(pay).where(eq(payments.id, id)).returning();
-    return updated;
+    const { data, error } = await supabase.from("payments").update(camelToSnake(pay)).eq("id", id).select().single();
+    if (error) return undefined;
+    return snakeToCamel(data);
   }
 
-  // Price Settings
   async getPriceSettings(): Promise<PriceSetting[]> {
-    return db.select().from(priceSettings);
+    const { data, error } = await supabase.from("price_settings").select("*");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
   }
 
   async upsertPriceSetting(setting: InsertPriceSetting): Promise<PriceSetting> {
-    const existing = await db.select().from(priceSettings).where(eq(priceSettings.key, setting.key));
-    if (existing.length > 0) {
-      const [updated] = await db.update(priceSettings)
-        .set({ value: setting.value, label: setting.label })
-        .where(eq(priceSettings.key, setting.key))
-        .returning();
-      return updated;
+    const { data: existing } = await supabase.from("price_settings").select("*").eq("key", setting.key);
+
+    if (existing && existing.length > 0) {
+      const { data, error } = await supabase
+        .from("price_settings")
+        .update({ value: setting.value, label: setting.label })
+        .eq("key", setting.key)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return snakeToCamel(data);
     }
-    const [created] = await db.insert(priceSettings).values(setting).returning();
-    return created;
+
+    const { data, error } = await supabase.from("price_settings").insert(setting).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
   }
 }
 

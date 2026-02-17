@@ -187,13 +187,11 @@ export async function registerRoutes(
   // ─── Seed endpoint ─────────────────────────────────────────
   app.post("/api/seed", async (_req, res) => {
     try {
-      // Check if already seeded
       const existingProducts = await storage.getProducts();
       if (existingProducts.length > 0) {
         return res.json({ message: "Already seeded" });
       }
 
-      // Seed categories
       const catData = [
         { name: "Kitchen", dutyPercent: 5, gstPercent: 18 },
         { name: "Stationery", dutyPercent: 0, gstPercent: 12 },
@@ -211,7 +209,6 @@ export async function registerRoutes(
         createdCats[cat.name] = cat.id;
       }
 
-      // Seed products
       const prodData = [
         { name: "Premium Glass Water Bottle Set", categoryId: createdCats["Kitchen"], image: "https://images.unsplash.com/photo-1602143407151-01114192003b?auto=format&fit=crop&q=80&w=500", costPrice: 250, mrp: 699, tags: ["Bestseller", "High Margin"], status: "Active" },
         { name: "Stackable Storage Bins (Set of 3)", categoryId: createdCats["Storage"], image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=500", costPrice: 450, mrp: 1299, tags: ["Recommended"], status: "Active" },
@@ -228,7 +225,6 @@ export async function registerRoutes(
         await storage.createProduct(p);
       }
 
-      // Seed clients
       const clientData = [
         { name: "Rahul Sharma", city: "Jaipur", stage: "3D Design", phone: "+91 98765 43210", email: "rahul.s@example.com", totalPaid: 150000, totalDue: 350000, nextAction: "Approve 3D Design Layout", managerName: "Amit Verma", managerPhone: "+91 99999 88888", storeAddress: "Plot 45, Raja Park, Jaipur", storeArea: 300 },
         { name: "Priya Patel", city: "Ahmedabad", stage: "Location Approved", phone: "+91 98989 89898", email: "priya.p@example.com", totalPaid: 50000, totalDue: 450000, nextAction: "Submit Floor Plan measurements", managerName: "Sneha Gupta", managerPhone: "+91 77777 66666", storeAddress: "Shop 12, CG Road, Ahmedabad", storeArea: 250 },
@@ -238,7 +234,6 @@ export async function registerRoutes(
         await storage.createClient(c);
       }
 
-      // Seed payments for client 1
       const payData = [
         { clientId: 1, invoiceId: "INV-001", date: "Jan 15, 2024", description: "Token Amount", amount: 50000, status: "Paid", method: "Bank Transfer" },
         { clientId: 1, invoiceId: "INV-002", date: "Feb 10, 2024", description: "Partial Payment (Inventory)", amount: 100000, status: "Paid", method: "UPI" },
@@ -248,7 +243,6 @@ export async function registerRoutes(
         await storage.createPayment(p);
       }
 
-      // Seed price settings
       const settingsData = [
         { key: "exchange_rate", value: "83.5", label: "USD/INR Exchange Rate" },
         { key: "freight_percent", value: "8", label: "Freight % of Cost" },
