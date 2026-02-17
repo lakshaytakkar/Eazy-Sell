@@ -184,6 +184,148 @@ export async function registerRoutes(
     res.json(setting);
   });
 
+  // ─── Airtable Sync endpoint ───────────────────────────────
+  app.post("/api/sync-airtable", async (_req, res) => {
+    try {
+      const airtableToken = process.env.AIRTABLE_API_TOKEN;
+      if (!airtableToken) {
+        return res.status(500).json({ error: "AIRTABLE_API_TOKEN not set" });
+      }
+
+      const baseId = "appJ3KjLi2gubnBak";
+      const allRecords: Array<{ id: string; fields: Record<string, any> }> = [];
+      let offset: string | undefined;
+      do {
+        const pageUrl = `https://api.airtable.com/v0/${baseId}/Customers${offset ? `?offset=${offset}` : ""}`;
+        const airtableRes = await fetch(pageUrl, {
+          headers: { Authorization: `Bearer ${airtableToken}` },
+        });
+        if (!airtableRes.ok) {
+          const errText = await airtableRes.text();
+          return res.status(500).json({ error: `Airtable fetch failed: ${errText}` });
+        }
+        const page = await airtableRes.json() as {
+          records: Array<{ id: string; fields: Record<string, any> }>;
+          offset?: string;
+        };
+        allRecords.push(...page.records);
+        offset = page.offset;
+      } while (offset);
+
+      const statusToStage: Record<string, string> = {
+        "Active": "Active",
+        "All Done": "Launched",
+        "Searching Area": "Location Shared",
+        "Pending": "Lead",
+      };
+
+      const parseArea = (val: string | undefined): number | null => {
+        if (!val) return null;
+        const match = val.match(/(\d[\d,]*)/);
+        return match ? parseInt(match[1].replace(/,/g, ""), 10) : null;
+      };
+
+      const knownCities = [
+        "Delhi", "New Delhi", "Mumbai", "Ahmedabad", "Jaipur", "Chandigarh",
+        "Mathura", "Jind", "Rohini", "Ladpur", "Idar", "Ankleshwar",
+        "Raigang", "Najafgarh", "Gurgaon", "Noida", "Hyderabad",
+        "Greater Kailash", "Kalkaji", "Kukatpally", "Gujarat", "UK",
+        "West Bengal", "Uttar Pradesh", "Haryana", "Telangana",
+      ];
+      const extractCity = (location: string | undefined): string => {
+        if (!location) return "Unknown";
+        for (const city of knownCities) {
+          if (location.toLowerCase().includes(city.toLowerCase())) return city;
+        }
+        const parts = location.split(",").map(s => s.trim()).filter(Boolean);
+        const lastMeaningful = parts.find(p => p.length > 2 && !/^\d/.test(p) && !p.includes("floor"));
+        return lastMeaningful || parts[0] || "Unknown";
+      };
+
+      const { supabase: sb } = await import("./supabase");
+
+      await sb.from("payments").delete().neq("id", 0);
+      await sb.from("launch_kit_items").delete().neq("id", 0);
+      await sb.from("launch_kit_submissions").delete().neq("id", 0);
+      await sb.from("clients").delete().neq("id", 0);
+
+      const syncedClients: Array<{ name: string; id: number }> = [];
+      const syncedPayments: Array<{ clientName: string; amount: number }> = [];
+      let skipped = 0;
+
+      for (const record of allRecords) {
+        const f = record.fields;
+        const customerName = f["Customer Name"];
+        if (!customerName) { skipped++; continue; }
+
+        const status = f["Status"] || "Pending";
+        const stage = statusToStage[status] || "Lead";
+        const location = f["Customer Location"] || "";
+        const city = extractCity(location);
+        const storeLocation = f["Stores location"] || f["Customer Location"] || "";
+
+        const clientRow = {
+          name: customerName.trim(),
+          city,
+          stage,
+          phone: f["Customer Number"] || null,
+          email: f["Customer Email"] || null,
+          total_paid: f["Payment Amount"] || 0,
+          total_due: 0,
+          next_action: null,
+          manager_name: null,
+          manager_phone: null,
+          store_address: storeLocation || null,
+          store_area: parseArea(f["Store Area"]),
+          user_id: null,
+        };
+
+        const { data: inserted, error: clientErr } = await sb
+          .from("clients")
+          .insert(clientRow)
+          .select()
+          .single();
+
+        if (clientErr || !inserted) {
+          console.error(`Failed to insert client ${customerName}:`, clientErr);
+          continue;
+        }
+
+        syncedClients.push({ name: customerName, id: inserted.id });
+
+        if (f["Payment Amount"] && f["Payment Amount"] > 0) {
+          const paymentRow = {
+            client_id: inserted.id,
+            invoice_id: f["Payment Description"] || `AT-${record.id}`,
+            date: f["Payment Date"] || new Date().toISOString().split("T")[0],
+            description: f["Payment Description"] || "Payment from Airtable",
+            amount: f["Payment Amount"],
+            status: "Paid",
+            method: f["Payments"] || "Other",
+          };
+
+          const { error: payErr } = await sb.from("payments").insert(paymentRow);
+          if (payErr) {
+            console.error(`Failed to insert payment for ${customerName}:`, payErr);
+          } else {
+            syncedPayments.push({ clientName: customerName, amount: f["Payment Amount"] });
+          }
+        }
+      }
+
+      res.json({
+        message: "Airtable sync complete",
+        clients: syncedClients.length,
+        payments: syncedPayments.length,
+        skipped,
+        details: { syncedClients, syncedPayments },
+      });
+    } catch (err: any) {
+      console.error("Airtable sync error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ─── Seed endpoint ─────────────────────────────────────────
   app.post("/api/seed", async (_req, res) => {
     try {
