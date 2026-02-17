@@ -26,7 +26,10 @@ import {
   ChevronLeft,
   FileText,
   ClipboardList,
-  MessageSquare
+  ClipboardCheck,
+  MessageSquare,
+  IndianRupee,
+  LifeBuoy
 } from "lucide-react";
 
 const clientNavGroups = [
@@ -37,6 +40,7 @@ const clientNavGroups = [
       { label: "Product Catalog", href: "/client/catalog", icon: ShoppingBag },
       { label: "My Launch Kit", href: "/client/launch-kit", icon: Package },
       { label: "My Store", href: "/client/store", icon: Store },
+      { label: "Readiness Checklist", href: "/client/checklist", icon: ClipboardCheck },
     ],
   },
   {
@@ -44,6 +48,12 @@ const clientNavGroups = [
     items: [
       { label: "Payments", href: "/client/payments", icon: CreditCard },
       { label: "Invoices", href: "/client/invoices", icon: FileText },
+    ],
+  },
+  {
+    label: "HELP",
+    items: [
+      { label: "Support", href: "/client/support", icon: LifeBuoy },
     ],
   },
 ];
@@ -62,6 +72,12 @@ const adminNavGroups = [
       { label: "Inventory", href: "/admin/products", icon: ShoppingBag },
       { label: "Kit Reviews", href: "/admin/reviews", icon: ClipboardList },
       { label: "Templates", href: "/admin/templates", icon: MessageSquare },
+    ],
+  },
+  {
+    label: "FINANCE",
+    items: [
+      { label: "Payments", href: "/admin/payments", icon: IndianRupee },
     ],
   },
 ];

@@ -1,8 +1,9 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, ShoppingBag, CreditCard, ClipboardList } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { getScoreLabel } from "@shared/schema";
 import type { Client, Product, LaunchKitSubmission, Payment } from "@shared/schema";
 
 export default function AdminDashboard() {
@@ -26,17 +27,17 @@ export default function AdminDashboard() {
   }
 
   const totalClients = clients.length;
-  const leadCount = clients.filter(c => c.stage === 'Lead').length;
+  const newInquiryCount = clients.filter(c => ['New Inquiry', 'Qualification Sent'].includes(c.stage)).length;
   const pendingReviews = submissions.filter(s => s.status === 'pending').length;
   const totalPaidAmount = payments.filter(p => p.status === 'Paid').reduce((sum, p) => sum + p.amount, 0);
   const totalProducts = products.length;
 
-  const onboardingStages = ['Token Paid', 'Location Shared', 'Location Approved'];
-  const productionStages = ['In Production', 'Shipped'];
-  const liveStages = ['Setup', 'Launched', 'Active'];
+  const prospectStages = ['Discovery Call', 'Proposal Sent', 'Negotiation'];
+  const executionStages = ['Token Paid', 'In Execution'];
+  const liveStages = ['Launched'];
 
-  const onboardingCount = clients.filter(c => onboardingStages.includes(c.stage)).length;
-  const productionCount = clients.filter(c => productionStages.includes(c.stage)).length;
+  const prospectCount = clients.filter(c => prospectStages.includes(c.stage)).length;
+  const executionCount = clients.filter(c => executionStages.includes(c.stage)).length;
   const launchedCount = clients.filter(c => liveStages.includes(c.stage)).length;
 
   const formatAmount = (val: number) => {
@@ -67,7 +68,7 @@ export default function AdminDashboard() {
               </div>
             </div>
              <div className="mt-4 flex gap-2">
-                <Badge variant="secondary" className="text-xs" data-testid="badge-leads">{leadCount} Active Leads</Badge>
+                <Badge variant="secondary" className="text-xs" data-testid="badge-leads">{newInquiryCount} New Leads</Badge>
              </div>
           </CardContent>
         </Card>
@@ -132,17 +133,27 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
              <div className="space-y-4">
-                {clients.slice(0, 4).map((client) => (
-                    <div key={client.id} className="flex items-center gap-4 pb-4 border-b last:border-0 last:pb-0" data-testid={`row-recent-client-${client.id}`}>
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                {clients.slice(0, 5).map((client) => {
+                    const scoreInfo = getScoreLabel(client.totalScore);
+                    return (
+                    <Link key={client.id} href={`/admin/clients/${client.id}`}>
+                    <div className="flex items-center gap-4 pb-4 border-b last:border-0 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg px-2 -mx-2 transition-colors" data-testid={`row-recent-client-${client.id}`}>
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
                             {client.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </div>
-                        <div className="flex-1">
-                             <p className="text-sm font-medium">{client.name}</p>
+                        <div className="flex-1 min-w-0">
+                             <p className="text-sm font-medium truncate">{client.name}</p>
                              <p className="text-xs text-muted-foreground">{client.city} • {client.stage}</p>
                         </div>
+                        {(client.totalScore ?? 0) > 0 && (
+                          <Badge variant="outline" className={`text-[10px] px-1.5 ${scoreInfo.color} shrink-0`}>
+                            {scoreInfo.emoji} {scoreInfo.label}
+                          </Badge>
+                        )}
                     </div>
-                ))}
+                    </Link>
+                    );
+                })}
                 {clients.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">No clients yet.</p>
                 )}
@@ -159,29 +170,29 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                      <div className="space-y-1">
                         <div className="flex justify-between text-sm">
-                            <span>Leads</span>
-                            <span className="font-bold" data-testid="text-pipeline-leads">{leadCount}</span>
+                            <span>New Leads</span>
+                            <span className="font-bold" data-testid="text-pipeline-leads">{newInquiryCount}</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary" style={{ width: `${(leadCount / totalClientsForBar) * 100}%` }}></div>
+                            <div className="h-full bg-primary" style={{ width: `${(newInquiryCount / totalClientsForBar) * 100}%` }}></div>
                         </div>
                      </div>
                      <div className="space-y-1">
                         <div className="flex justify-between text-sm">
-                            <span>Onboarding</span>
-                            <span className="font-bold" data-testid="text-pipeline-onboarding">{onboardingCount}</span>
+                            <span>In Discussion</span>
+                            <span className="font-bold" data-testid="text-pipeline-prospects">{prospectCount}</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-500" style={{ width: `${(onboardingCount / totalClientsForBar) * 100}%` }}></div>
+                            <div className="h-full bg-indigo-500" style={{ width: `${(prospectCount / totalClientsForBar) * 100}%` }}></div>
                         </div>
                      </div>
                      <div className="space-y-1">
                         <div className="flex justify-between text-sm">
-                            <span>Production</span>
-                            <span className="font-bold" data-testid="text-pipeline-production">{productionCount}</span>
+                            <span>In Execution</span>
+                            <span className="font-bold" data-testid="text-pipeline-execution">{executionCount}</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-orange-500" style={{ width: `${(productionCount / totalClientsForBar) * 100}%` }}></div>
+                            <div className="h-full bg-orange-500" style={{ width: `${(executionCount / totalClientsForBar) * 100}%` }}></div>
                         </div>
                      </div>
                      <div className="space-y-1">

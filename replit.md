@@ -59,8 +59,8 @@ Dual-portal web application for retail partnership management. Client portal for
 - `/qualify` - Public partner qualification form (4-section wizard, auto lead-scoring)
 - `/scope` - Program scope page (packages, included/excluded items)
 - `/login` - Login page
-- `/client/*` - Client portal (dashboard, catalog, launch-kit, store, payments)
-- `/admin/*` - Admin portal (dashboard, clients, products, reviews, templates, settings)
+- `/client/*` - Client portal (dashboard, catalog, launch-kit, store, checklist, payments, invoices, support)
+- `/admin/*` - Admin portal (dashboard, clients, products, reviews, templates, payments, settings)
 
 ## Key API Endpoints
 - GET/POST /api/products, /api/categories, /api/clients

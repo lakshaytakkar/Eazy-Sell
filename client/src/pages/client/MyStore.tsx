@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Building, CheckCircle2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { PIPELINE_STAGES } from "@shared/schema";
 import type { Client } from "@shared/schema";
 
 export default function MyStore() {
@@ -14,16 +15,15 @@ export default function MyStore() {
     return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
   }
 
-  const stages = ['Lead', 'Token Paid', 'Location Shared', 'Location Approved', '3D Design', 'Payment Partial', 'In Production', 'Shipped', 'Setup', 'Launched'];
-  const currentStageIndex = stages.indexOf(client.stage);
+  const stages = PIPELINE_STAGES.filter(s => s !== 'Lost');
+  const currentStageIndex = stages.indexOf(client.stage as any);
 
   const steps = [
-    { title: "Token Payment", date: currentStageIndex >= 1 ? "Completed" : "Pending", status: currentStageIndex >= 1 ? "completed" : currentStageIndex === 0 ? "current" : "pending", desc: "Initial commitment amount received." },
-    { title: "Location Finalization", date: currentStageIndex >= 3 ? "Completed" : "Pending", status: currentStageIndex >= 3 ? "completed" : (currentStageIndex >= 1 && currentStageIndex < 3) ? "current" : "pending", desc: "Store location approved by admin." },
-    { title: "3D Design & Layout", date: currentStageIndex >= 4 ? "Completed" : "Pending", status: currentStageIndex >= 4 ? "completed" : currentStageIndex === 4 ? "current" : (currentStageIndex === 3 ? "current" : "pending"), desc: "Architectural drawings in progress." },
-    { title: "Inventory Selection", date: currentStageIndex >= 5 ? "Completed" : "Pending", status: currentStageIndex >= 5 ? "completed" : currentStageIndex === 4 ? "current" : "pending", desc: "Finalize your Launch Kit." },
-    { title: "Production & Shipping", date: currentStageIndex >= 7 ? "Completed" : "Pending", status: currentStageIndex >= 7 ? "completed" : (currentStageIndex >= 5 && currentStageIndex < 7) ? "current" : "pending", desc: "Materials dispatched to site." },
-    { title: "Grand Opening", date: currentStageIndex >= 9 ? "Completed" : "Target: TBD", status: currentStageIndex >= 9 ? "completed" : currentStageIndex >= 7 ? "current" : "pending", desc: "Store launch event." },
+    { title: "Discovery & Qualification", date: currentStageIndex >= 2 ? "Completed" : "Pending", status: currentStageIndex >= 2 ? "completed" : currentStageIndex <= 1 ? "current" : "pending", desc: "Understanding your requirements and location." },
+    { title: "Proposal & Agreement", date: currentStageIndex >= 4 ? "Completed" : "Pending", status: currentStageIndex >= 4 ? "completed" : (currentStageIndex >= 2 && currentStageIndex < 4) ? "current" : "pending", desc: "Package selection and negotiation." },
+    { title: "Token Payment", date: currentStageIndex >= 5 ? "Completed" : "Pending", status: currentStageIndex >= 5 ? "completed" : currentStageIndex === 4 ? "current" : "pending", desc: "Initial commitment amount to secure launch slot." },
+    { title: "Store Execution", date: currentStageIndex >= 6 ? "Completed" : "Pending", status: currentStageIndex >= 6 ? "completed" : currentStageIndex === 5 ? "current" : "pending", desc: "Interior setup, inventory procurement and placement." },
+    { title: "Grand Opening", date: currentStageIndex >= 7 ? "Completed" : "Target: TBD", status: currentStageIndex >= 7 ? "completed" : currentStageIndex === 6 ? "current" : "pending", desc: "Store launch event and go-live." },
   ];
 
   return (
@@ -70,7 +70,7 @@ export default function MyStore() {
               <CardContent>
                  <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 text-center">
                     <p className="text-sm font-medium text-foreground mb-2" data-testid="text-design-status">
-                      {currentStageIndex >= 4 ? "3D Layout Completed" : currentStageIndex === 3 ? "3D Layout in Progress" : "Awaiting Previous Steps"}
+                      {currentStageIndex >= 6 ? "Store Layout Completed" : currentStageIndex >= 5 ? "Store Layout in Progress" : "Awaiting Previous Steps"}
                     </p>
                     <p className="text-xs text-muted-foreground mb-4">
                         {client.storeArea 

@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { AlertCircle, CheckCircle2, ChevronRight, Clock, MapPin, Package, Phone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { PIPELINE_STAGES } from "@shared/schema";
 import type { Client } from "@shared/schema";
 
 export default function ClientDashboard() {
@@ -14,9 +15,9 @@ export default function ClientDashboard() {
     return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
   }
 
-  const stages = ['Lead', 'Token Paid', 'Location Shared', 'Location Approved', '3D Design', 'Payment Partial', 'In Production', 'Shipped', 'Setup', 'Launched'];
-  const currentStageIndex = stages.indexOf(client.stage);
-  const progress = ((currentStageIndex + 1) / stages.length) * 100;
+  const stages = PIPELINE_STAGES.filter(s => s !== 'Lost');
+  const currentStageIndex = stages.indexOf(client.stage as any);
+  const progress = currentStageIndex >= 0 ? ((currentStageIndex + 1) / stages.length) * 100 : 10;
 
   const totalPaid = client.totalPaid ?? 0;
   const totalDue = client.totalDue ?? 0;

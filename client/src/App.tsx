@@ -31,6 +31,12 @@ import AdminProducts from "@/pages/admin/Products";
 import KitReviews from "@/pages/admin/Reviews";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminTemplates from "@/pages/admin/Templates";
+import AdminPayments from "@/pages/admin/Payments";
+
+// Additional Client Pages
+import ClientInvoices from "@/pages/client/Invoices";
+import ClientChecklist from "@/pages/client/Checklist";
+import ClientSupport from "@/pages/client/Support";
 
 function Router() {
   return (
@@ -82,6 +88,21 @@ function Router() {
           <ClientPayments />
         </DashboardLayout>
       </Route>
+      <Route path="/client/invoices">
+        <DashboardLayout userType="client">
+          <ClientInvoices />
+        </DashboardLayout>
+      </Route>
+      <Route path="/client/checklist">
+        <DashboardLayout userType="client">
+          <ClientChecklist />
+        </DashboardLayout>
+      </Route>
+      <Route path="/client/support">
+        <DashboardLayout userType="client">
+          <ClientSupport />
+        </DashboardLayout>
+      </Route>
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard">
@@ -112,6 +133,11 @@ function Router() {
       <Route path="/admin/templates">
         <DashboardLayout userType="admin">
           <AdminTemplates />
+        </DashboardLayout>
+      </Route>
+      <Route path="/admin/payments">
+        <DashboardLayout userType="admin">
+          <AdminPayments />
         </DashboardLayout>
       </Route>
       <Route path="/admin/settings">
