@@ -1,12 +1,30 @@
 import { useParams, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import {
   Phone,
   Mail,
@@ -19,10 +37,19 @@ import {
   Users,
   Ruler,
   Calendar,
-  CheckCircle2,
   Clock,
   FileText,
   ExternalLink,
+  Copy,
+  Check,
+  MoreHorizontal,
+  Eye,
+  Download,
+  Edit3,
+  MessageSquare,
+  ChevronDown,
+  PhoneCall,
+  Share2,
 } from "lucide-react";
 import type { Client, Payment } from "@shared/schema";
 import { STAGES } from "@shared/schema";
@@ -43,14 +70,66 @@ const stageColors: Record<string, string> = {
 
 function formatCurrency(val: number | null | undefined) {
   if (!val) return "₹0";
+  return `₹${val.toLocaleString("en-IN")}`;
+}
+
+function formatCurrencyShort(val: number | null | undefined) {
+  if (!val) return "₹0";
   if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
   if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K`;
   return `₹${val.toLocaleString("en-IN")}`;
 }
 
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  );
+}
+
+function GmailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
+    </svg>
+  );
+}
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            onClick={handleCopy}
+            data-testid={`button-copy-${label}`}
+          >
+            {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{copied ? "Copied!" : `Copy ${label}`}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export default function ClientDetail() {
   const params = useParams<{ id: string }>();
   const clientId = Number(params.id);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -58,6 +137,20 @@ export default function ClientDetail() {
 
   const { data: payments = [] } = useQuery<Payment[]>({
     queryKey: [`/api/payments/client/${clientId}`],
+  });
+
+  const updateStageMutation = useMutation({
+    mutationFn: async (newStage: string) => {
+      const res = await apiRequest("PATCH", `/api/clients/${clientId}`, { stage: newStage });
+      return res.json();
+    },
+    onSuccess: (_data, newStage) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Stage updated", description: `Moved to "${newStage}"` });
+    },
+    onError: () => {
+      toast({ title: "Failed to update stage", variant: "destructive" });
+    },
   });
 
   const client = clients.find((c) => c.id === clientId);
@@ -102,16 +195,23 @@ export default function ClientDetail() {
     ?.replace(/https?:\/\/[^\s]+/g, "")
     .trim();
 
+  const whatsappNumber = client.phone?.replace(/[^0-9]/g, "") || "";
+  const whatsappUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber.startsWith("91") ? whatsappNumber : "91" + whatsappNumber}`
+    : null;
+
+  const totalPaid = payments
+    .filter((p) => p.status === "Paid")
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
+
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] w-full overflow-hidden" data-testid="client-detail-page">
       <div className="shrink-0 pb-3 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center text-sm text-muted-foreground gap-2">
-            <Link href="/admin/clients">
-              <a className="hover:text-foreground transition-colors flex items-center gap-1" data-testid="link-back-clients">
+            <Link href="/admin/clients" className="hover:text-foreground transition-colors flex items-center gap-1" data-testid="link-back-clients">
                 <Users className="h-4 w-4" />
                 Client Pipeline
-              </a>
             </Link>
             <ChevronRight className="h-4 w-4" />
             <span className="text-foreground font-medium truncate">
@@ -166,22 +266,28 @@ export default function ClientDetail() {
                         <MapPin className="h-3.5 w-3.5" /> {client.city}
                       </span>
                       {client.phone && (
-                        <a
-                          href={`tel:${client.phone}`}
-                          className="flex items-center gap-1 hover:text-primary transition-colors"
-                          data-testid="link-phone"
-                        >
-                          <Phone className="h-3.5 w-3.5" /> {client.phone}
-                        </a>
+                        <span className="flex items-center gap-1">
+                          <a
+                            href={`tel:${client.phone}`}
+                            className="hover:text-primary transition-colors flex items-center gap-1"
+                            data-testid="link-phone"
+                          >
+                            <Phone className="h-3.5 w-3.5" /> {client.phone}
+                          </a>
+                          <CopyButton text={client.phone} label="phone" />
+                        </span>
                       )}
                       {client.email && (
-                        <a
-                          href={`mailto:${client.email}`}
-                          className="flex items-center gap-1 hover:text-primary transition-colors"
-                          data-testid="link-email"
-                        >
-                          <Mail className="h-3.5 w-3.5" /> {client.email}
-                        </a>
+                        <span className="flex items-center gap-1">
+                          <a
+                            href={`mailto:${client.email}`}
+                            className="hover:text-primary transition-colors flex items-center gap-1"
+                            data-testid="link-email"
+                          >
+                            <Mail className="h-3.5 w-3.5" /> {client.email}
+                          </a>
+                          <CopyButton text={client.email} label="email" />
+                        </span>
                       )}
                     </div>
                   </div>
@@ -189,35 +295,110 @@ export default function ClientDetail() {
 
                 <div className="flex items-center gap-1 mt-1">
                   {STAGES.map((stage, i) => (
-                    <div key={stage} className="flex items-center gap-1">
-                      <div
-                        className={`h-2 flex-1 rounded-full min-w-[20px] transition-colors ${
-                          i <= currentStageIndex
-                            ? "bg-primary"
-                            : "bg-muted"
-                        }`}
-                        title={stage}
-                      />
-                    </div>
+                    <TooltipProvider key={stage}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={`h-2 flex-1 rounded-full min-w-[20px] transition-colors cursor-default ${
+                              i <= currentStageIndex
+                                ? "bg-primary"
+                                : "bg-muted"
+                            }`}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">{stage}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ))}
                 </div>
               </div>
 
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-2 shrink-0 flex-wrap">
                 {client.phone && (
-                  <a href={`https://wa.me/${client.phone.replace(/[^0-9+]/g, "")}`} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" data-testid="button-whatsapp">
-                      <Phone className="h-4 w-4 mr-1" /> WhatsApp
+                  <a href={`tel:${client.phone}`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
+                      data-testid="button-call"
+                    >
+                      <PhoneCall className="h-4 w-4 mr-1.5" /> Call
+                    </Button>
+                  </a>
+                )}
+                {whatsappUrl && (
+                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 hover:text-[#128C7E]"
+                      data-testid="button-whatsapp"
+                    >
+                      <WhatsAppIcon className="h-4 w-4 mr-1.5" /> WhatsApp
                     </Button>
                   </a>
                 )}
                 {client.email && (
                   <a href={`mailto:${client.email}`}>
-                    <Button variant="outline" size="sm" data-testid="button-email">
-                      <Mail className="h-4 w-4 mr-1" /> Email
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[#EA4335]/30 bg-[#EA4335]/10 text-[#EA4335] hover:bg-[#EA4335]/20 hover:text-[#D93025]"
+                      data-testid="button-email"
+                    >
+                      <GmailIcon className="h-4 w-4 mr-1.5" /> Gmail
                     </Button>
                   </a>
                 )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="button-more-actions">
+                      <MoreHorizontal className="h-4 w-4 mr-1.5" /> More
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const text = `${client.name}\n${client.phone || ""}\n${client.city}\nStage: ${client.stage}`;
+                        navigator.clipboard.writeText(text);
+                      }}
+                      data-testid="action-copy-details"
+                    >
+                      <Copy className="h-4 w-4 mr-2" /> Copy Client Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const text = `Client: ${client.name}\nCity: ${client.city}\nStage: ${client.stage}\nPaid: ${formatCurrencyShort(client.totalPaid)}\nDue: ${formatCurrencyShort(client.totalDue)}`;
+                        navigator.clipboard.writeText(text);
+                      }}
+                      data-testid="action-copy-summary"
+                    >
+                      <Share2 className="h-4 w-4 mr-2" /> Share Summary
+                    </DropdownMenuItem>
+                    {whatsappUrl && (
+                      <DropdownMenuItem asChild>
+                        <a
+                          href={`${whatsappUrl}?text=${encodeURIComponent(`Hi ${client.name}, this is regarding your Eazy to Sell store partnership.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" /> Send Template Message
+                        </a>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => toast({ title: "Coming soon", description: "Client editing will be available shortly." })}
+                      data-testid="action-edit-client"
+                    >
+                      <Edit3 className="h-4 w-4 mr-2" /> Edit Client
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -237,7 +418,7 @@ export default function ClientDetail() {
                     Total Paid
                   </p>
                   <p className="text-lg font-bold text-green-600" data-testid="text-total-paid">
-                    {formatCurrency(client.totalPaid)}
+                    {formatCurrencyShort(client.totalPaid)}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -245,8 +426,19 @@ export default function ClientDetail() {
                     Balance Due
                   </p>
                   <p className="text-lg font-bold text-destructive" data-testid="text-total-due">
-                    {formatCurrency(client.totalDue)}
+                    {formatCurrencyShort(client.totalDue)}
                   </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Payments Count</p>
+                  <p className="font-semibold">{payments.length}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Verified Total</p>
+                  <p className="font-semibold text-green-600">{formatCurrencyShort(totalPaid)}</p>
                 </div>
               </div>
             </CardContent>
@@ -254,9 +446,22 @@ export default function ClientDetail() {
 
           <Card className="border rounded-2xl shadow-sm">
             <CardContent className="p-5 space-y-4">
-              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <Store className="h-4 w-4 text-primary" /> Store Details
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <Store className="h-4 w-4 text-primary" /> Store Details
+                </h3>
+                {storeMapUrl && (
+                  <a
+                    href={storeMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                    data-testid="link-store-map"
+                  >
+                    <ExternalLink className="h-3 w-3" /> Map
+                  </a>
+                )}
+              </div>
               <div className="space-y-3">
                 {cleanAddress && (
                   <div className="space-y-1">
@@ -266,17 +471,6 @@ export default function ClientDetail() {
                     <p className="text-sm text-foreground leading-relaxed" data-testid="text-store-address">
                       {cleanAddress}
                     </p>
-                    {storeMapUrl && (
-                      <a
-                        href={storeMapUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
-                        data-testid="link-store-map"
-                      >
-                        <ExternalLink className="h-3 w-3" /> View on Maps
-                      </a>
-                    )}
                   </div>
                 )}
                 {client.storeArea && (
@@ -288,6 +482,9 @@ export default function ClientDetail() {
                       {client.storeArea.toLocaleString()} sq ft
                     </p>
                   </div>
+                )}
+                {!cleanAddress && !client.storeArea && (
+                  <p className="text-sm text-muted-foreground italic">No store details available</p>
                 )}
               </div>
             </CardContent>
@@ -306,25 +503,68 @@ export default function ClientDetail() {
             </Card>
           )}
 
+          <Card className="border rounded-2xl shadow-sm">
+            <CardContent className="p-5 space-y-4">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <ChevronDown className="h-4 w-4 text-primary" /> Stage Management
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {STAGES.map((stage, i) => (
+                  <Badge
+                    key={stage}
+                    variant="outline"
+                    className={`text-[10px] cursor-pointer transition-all ${
+                      client.stage === stage
+                        ? stageColors[stage] + " ring-2 ring-primary/20 font-semibold"
+                        : i <= currentStageIndex
+                          ? "opacity-50 hover:opacity-80"
+                          : "opacity-30 hover:opacity-60"
+                    }`}
+                    onClick={() => {
+                      if (stage !== client.stage) {
+                        updateStageMutation.mutate(stage);
+                      }
+                    }}
+                    data-testid={`stage-badge-${stage.replace(/\s+/g, "-").toLowerCase()}`}
+                  >
+                    {stage}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           {(client.managerName || client.managerPhone) && (
             <Card className="border rounded-2xl shadow-sm">
               <CardContent className="p-5 space-y-3">
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                   <Users className="h-4 w-4 text-primary" /> Account Manager
                 </h3>
-                {client.managerName && (
-                  <p className="text-sm font-medium text-foreground">
-                    {client.managerName}
-                  </p>
-                )}
-                {client.managerPhone && (
-                  <a
-                    href={`tel:${client.managerPhone}`}
-                    className="text-sm text-primary hover:underline flex items-center gap-1"
-                  >
-                    <Phone className="h-3.5 w-3.5" /> {client.managerPhone}
-                  </a>
-                )}
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs bg-blue-100 text-blue-700">
+                      {client.managerName?.split(" ").map((n) => n[0]).join("") || "AM"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    {client.managerName && (
+                      <p className="text-sm font-medium text-foreground">
+                        {client.managerName}
+                      </p>
+                    )}
+                    {client.managerPhone && (
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={`tel:${client.managerPhone}`}
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          <Phone className="h-3 w-3" /> {client.managerPhone}
+                        </a>
+                        <CopyButton text={client.managerPhone} label="manager-phone" />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -339,7 +579,7 @@ export default function ClientDetail() {
                   className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground"
                   data-testid="tab-payments"
                 >
-                  <CreditCard className="h-4 w-4 mr-1.5" /> Payments
+                  <CreditCard className="h-4 w-4 mr-1.5" /> Payments ({payments.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="timeline"
@@ -361,10 +601,18 @@ export default function ClientDetail() {
             <div className="flex-1 overflow-hidden">
               <TabsContent value="payments" className="h-full mt-0">
                 <Card className="border rounded-2xl shadow-sm h-full flex flex-col overflow-hidden">
-                  <div className="px-5 py-4 border-b shrink-0">
+                  <div className="px-5 py-4 border-b shrink-0 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-foreground">
                       Payment History
                     </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toast({ title: "Coming soon", description: "Payment recording will be available shortly." })}
+                      data-testid="button-add-payment"
+                    >
+                      <IndianRupee className="h-3.5 w-3.5 mr-1" /> Record Payment
+                    </Button>
                   </div>
                   <ScrollArea className="flex-1">
                     <div className="p-5">
@@ -375,11 +623,12 @@ export default function ClientDetail() {
                           <p className="text-sm mt-1">Payment records will appear here once added.</p>
                         </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {payments.map((payment) => (
                             <div
                               key={payment.id}
-                              className="flex items-start gap-4 p-4 bg-muted/30 rounded-xl border"
+                              className="flex items-start gap-4 p-4 bg-muted/30 rounded-xl border cursor-pointer hover:bg-muted/50 hover:border-primary/20 transition-all group"
+                              onClick={() => setSelectedPayment(payment)}
                               data-testid={`payment-row-${payment.id}`}
                             >
                               <div
@@ -392,23 +641,57 @@ export default function ClientDetail() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
                                   <div>
-                                    <p className="text-sm font-semibold text-foreground">
+                                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                                       {formatCurrency(payment.amount)}
                                     </p>
-                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                      {payment.description}
+                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                      {payment.description || "Payment"}
                                     </p>
                                   </div>
-                                  <Badge
-                                    variant="outline"
-                                    className={`shrink-0 text-[10px] ${
-                                      payment.status === "Paid"
-                                        ? "bg-green-50 text-green-700 border-green-200"
-                                        : "bg-amber-50 text-amber-700 border-amber-200"
-                                    }`}
-                                  >
-                                    {payment.status}
-                                  </Badge>
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge
+                                      variant="outline"
+                                      className={`shrink-0 text-[10px] ${
+                                        payment.status === "Paid"
+                                          ? "bg-green-50 text-green-700 border-green-200"
+                                          : "bg-amber-50 text-amber-700 border-amber-200"
+                                      }`}
+                                    >
+                                      {payment.status}
+                                    </Badge>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={(e) => e.stopPropagation()}
+                                          data-testid={`payment-actions-${payment.id}`}
+                                        >
+                                          <MoreHorizontal className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" className="w-44">
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedPayment(payment); }}>
+                                          <Eye className="h-4 w-4 mr-2" /> View Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigator.clipboard.writeText(
+                                            `Payment: ${formatCurrency(payment.amount)}\nStatus: ${payment.status}\nDate: ${payment.date}\nMethod: ${payment.method || "N/A"}`
+                                          );
+                                        }}>
+                                          <Copy className="h-4 w-4 mr-2" /> Copy Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={(e) => {
+                                          e.stopPropagation();
+                                          toast({ title: "Coming soon", description: "Receipt downloads will be available shortly." });
+                                        }}>
+                                          <Download className="h-4 w-4 mr-2" /> Download Receipt
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                                   <span className="flex items-center gap-1">
@@ -443,7 +726,7 @@ export default function ClientDetail() {
                     <div className="p-6 space-y-6">
                       <div className="flex items-start gap-4">
                         <div className="mt-1.5 h-3 w-3 rounded-full bg-primary shrink-0 ring-4 ring-primary/10" />
-                        <div>
+                        <div className="flex-1">
                           <p className="text-sm font-medium text-foreground">
                             Client record synced from Airtable
                           </p>
@@ -453,8 +736,26 @@ export default function ClientDetail() {
                         </div>
                       </div>
 
+                      {client.stage !== "Lead" && (
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1.5 h-3 w-3 rounded-full bg-blue-500 shrink-0 ring-4 ring-blue-500/10" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              Stage updated to "{client.stage}"
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Current pipeline stage
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {payments.map((p) => (
-                        <div key={p.id} className="flex items-start gap-4">
+                        <div
+                          key={p.id}
+                          className="flex items-start gap-4 cursor-pointer hover:bg-muted/30 -mx-3 px-3 py-1 rounded-lg transition-colors"
+                          onClick={() => setSelectedPayment(p)}
+                        >
                           <div
                             className={`mt-1.5 h-3 w-3 rounded-full shrink-0 ring-4 ${
                               p.status === "Paid"
@@ -462,7 +763,7 @@ export default function ClientDetail() {
                                 : "bg-amber-500 ring-amber-500/10"
                             }`}
                           />
-                          <div>
+                          <div className="flex-1">
                             <p className="text-sm font-medium text-foreground">
                               Payment of {formatCurrency(p.amount)} —{" "}
                               {p.status}
@@ -471,6 +772,7 @@ export default function ClientDetail() {
                               {p.date} via {p.method || "N/A"}
                             </p>
                           </div>
+                          <Eye className="h-4 w-4 text-muted-foreground/40 mt-1 shrink-0" />
                         </div>
                       ))}
 
@@ -486,16 +788,137 @@ export default function ClientDetail() {
               </TabsContent>
 
               <TabsContent value="notes" className="h-full mt-0">
-                <Card className="border rounded-2xl shadow-sm h-full flex flex-col items-center justify-center text-muted-foreground">
-                  <FileText className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                  <p className="font-medium">No notes yet</p>
-                  <p className="text-sm mt-1">Notes and observations will appear here.</p>
+                <Card className="border rounded-2xl shadow-sm h-full flex flex-col overflow-hidden">
+                  <div className="px-5 py-4 border-b shrink-0 flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-foreground">
+                      Notes & Observations
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toast({ title: "Coming soon", description: "Note-taking will be available shortly." })}
+                      data-testid="button-add-note"
+                    >
+                      <Edit3 className="h-3.5 w-3.5 mr-1" /> Add Note
+                    </Button>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6">
+                    <FileText className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                    <p className="font-medium">No notes yet</p>
+                    <p className="text-sm mt-1 text-center">Notes and observations will appear here.</p>
+                  </div>
                 </Card>
               </TabsContent>
             </div>
           </Tabs>
         </div>
       </div>
+
+      <Dialog open={!!selectedPayment} onOpenChange={(open) => !open && setSelectedPayment(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              Payment Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPayment && (
+            <div className="space-y-5 pt-2">
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border">
+                <div>
+                  <p className="text-2xl font-bold text-foreground">
+                    {formatCurrency(selectedPayment.amount)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {selectedPayment.description || "Payment"}
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={`text-sm px-3 py-1 ${
+                    selectedPayment.status === "Paid"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}
+                >
+                  {selectedPayment.status === "Paid" ? (
+                    <Check className="h-3.5 w-3.5 mr-1" />
+                  ) : (
+                    <Clock className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  {selectedPayment.status}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1 p-3 bg-muted/20 rounded-lg">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Date</p>
+                  <p className="text-sm font-medium flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    {selectedPayment.date || "N/A"}
+                  </p>
+                </div>
+                <div className="space-y-1 p-3 bg-muted/20 rounded-lg">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Method</p>
+                  <p className="text-sm font-medium flex items-center gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                    {selectedPayment.method || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1 p-3 bg-muted/20 rounded-lg">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Client</p>
+                <p className="text-sm font-medium">{client.name}</p>
+              </div>
+
+              <Separator />
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `Payment: ${formatCurrency(selectedPayment.amount)}\nStatus: ${selectedPayment.status}\nDate: ${selectedPayment.date}\nMethod: ${selectedPayment.method || "N/A"}\nClient: ${client.name}`
+                    );
+                  }}
+                  data-testid="modal-copy-payment"
+                >
+                  <Copy className="h-4 w-4 mr-1.5" /> Copy
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => toast({ title: "Coming soon", description: "Receipt downloads will be available shortly." })}
+                  data-testid="modal-download-receipt"
+                >
+                  <Download className="h-4 w-4 mr-1.5" /> Receipt
+                </Button>
+                {whatsappUrl && (
+                  <a
+                    href={`${whatsappUrl}?text=${encodeURIComponent(`Hi ${client.name}, confirming payment of ${formatCurrency(selectedPayment.amount)} received on ${selectedPayment.date || "N/A"}. Thank you!`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-[#25D366]/30 text-[#25D366]"
+                      data-testid="modal-whatsapp-confirm"
+                    >
+                      <WhatsAppIcon className="h-4 w-4 mr-1.5" /> Confirm
+                    </Button>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
