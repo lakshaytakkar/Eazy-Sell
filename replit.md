@@ -4,6 +4,12 @@
 Dual-portal web application for retail partnership management. Client portal for retail partners to manage store launch journey (catalog, launch kit, payments). Admin backoffice with CRM (6-factor lead scoring, 9-stage pipeline, drag-and-drop kanban), inventory, kit approvals, WhatsApp templates, and store readiness checklists. V2 price calculator engine. V3 adds CRM upgrade, public qualification form, readiness checklists, timeline tracking, WhatsApp templates, enhanced ROI calculator, FAQ, and program scope page.
 
 ## Recent Changes
+- Feb 18, 2026: Client onboarding wizard at /client/onboarding - 5-step flow (Your Details, Store Identity, Store Dimensions, Inventory Preferences with CategoryMixSlider, Review & Confirm). Saves per step, resume support via onboarding_step field.
+- Feb 18, 2026: CategoryMixSlider component - per-category allocation sliders (0-40%), budget-based INR calculation, donut chart, recommended defaults by store type, save to client_category_preferences table.
+- Feb 18, 2026: Store Preferences tab under My Store (/client/store/preferences) with CategoryMixSlider for inventory budget allocation.
+- Feb 18, 2026: Dashboard dynamic data - days from estimatedLaunchDate, actual kit items count, dynamic next steps based on client state, onboarding CTA when profileCompleted is false, Contact Manager WhatsApp link.
+- Feb 18, 2026: Fixed dead buttons - Support page tel/WhatsApp/email hrefs, Contact Manager to wa.me/919306566900, View Scope link to /scope.
+- Feb 18, 2026: DB migration - client onboarding fields (store_name, store_floor, store_type, nearby_landmark, monthly_rent, expected_footfall, operating_hours, market_type, profile_completed, onboarding_step, inventory_budget), client_category_preferences table.
 - Feb 18, 2026: Merged /qualify form into homepage hero - 4-step wizard with full qualification fields, validation, auto lead-scoring, POST to /api/qualify. Removed standalone /qualify route.
 - Feb 18, 2026: Theme updated to warm orange/yellow (primary hsl 32 95% 52%, secondary hsl 45 90% 50%). Split hero layout with store image + curvy arrow annotation. Store interior image on login page.
 - Feb 18, 2026: My Profile page at /client/profile - editable personal info, store details, business info (GST/PAN/bank), program status sidebar, form validation for GST/PAN/IFSC formats.
