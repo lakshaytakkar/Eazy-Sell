@@ -7,5 +7,5 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getAvatarUrl(name: string, size: number = 64): string {
   const encoded = encodeURIComponent(name.trim());
-  return `https://ui-avatars.com/api/?name=${encoded}&size=${size}&background=fce4e4&color=e11d48&bold=true&format=png`;
+  return `https://ui-avatars.com/api/?name=${encoded}&size=${size}&background=fff3e0&color=d97706&bold=true&format=svg`;
 }
