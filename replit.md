@@ -56,13 +56,28 @@ Dual-portal web application for retail partnership management. Client portal for
 - Settings: exchange_rate, sourcing_commission, freight_per_cbm, insurance_percent, sw_surcharge_percent, our_markup_percent, target_store_margin
 - Category-level: customs_duty_percent, igst_percent, hs_code
 
+## Client Navigation (Top Nav Bar)
+- **Layout**: ClientLayout with horizontal top nav bar (no sidebar for clients)
+- **Top Nav Items**: Home | Products | My Store | Orders | Payments
+- **User Dropdown** (top-right avatar): My Profile, Support, Help Center, Settings, Logout
+- **Sub-tabs**: My Store has tabs (Launch Kit | Store Setup | Readiness Checklist), Payments has tabs (Payment History | Invoices)
+
 ## Key Routes
 - `/` - Landing page (hero, stats, quick filters, product showcase, categories, USPs, bento, FAQ, CTA)
 - `/roi-calculator` - ROI Calculator (3 packages, scenario toggle, live calculations)
 - `/qualify` - Public partner qualification form (4-section wizard, auto lead-scoring)
 - `/scope` - Program scope page (packages, included/excluded items)
 - `/login` - Login page
-- `/client/*` - Client portal (dashboard, catalog, launch-kit, store, checklist, payments, invoices, support)
+- `/client/dashboard` - Client home/dashboard
+- `/client/catalog` - Product catalog with filters
+- `/client/store/launch-kit` - Launch kit builder
+- `/client/store/setup` - Store setup page
+- `/client/store/checklist` - Readiness checklist
+- `/client/orders` - Order tracking
+- `/client/payments/history` - Payment history
+- `/client/payments/invoices` - Invoices
+- `/client/profile` - My profile (via user dropdown)
+- `/client/support` - Support (via user dropdown)
 - `/admin/*` - Admin portal (dashboard, clients, products, reviews, templates, payments, settings)
 
 ## Key API Endpoints

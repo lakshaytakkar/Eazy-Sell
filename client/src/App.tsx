@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ClientLayout } from "@/components/layout/ClientLayout";
 
 import LandingPage from "@/pages/LandingPage";
 import ROICalculator from "@/pages/ROICalculator";
@@ -21,6 +22,11 @@ import ProductCatalog from "@/pages/client/Catalog";
 import LaunchKit from "@/pages/client/LaunchKit";
 import MyStore from "@/pages/client/MyStore";
 import ClientPayments from "@/pages/client/Payments";
+import ClientInvoices from "@/pages/client/Invoices";
+import ClientChecklist from "@/pages/client/Checklist";
+import ClientSupport from "@/pages/client/Support";
+import ClientProfile from "@/pages/client/Profile";
+import OrderTracking from "@/pages/client/OrderTracking";
 
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminClients from "@/pages/admin/Clients";
@@ -30,12 +36,6 @@ import KitReviews from "@/pages/admin/Reviews";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminTemplates from "@/pages/admin/Templates";
 import AdminPayments from "@/pages/admin/Payments";
-
-import ClientInvoices from "@/pages/client/Invoices";
-import ClientChecklist from "@/pages/client/Checklist";
-import ClientSupport from "@/pages/client/Support";
-import ClientProfile from "@/pages/client/Profile";
-import OrderTracking from "@/pages/client/OrderTracking";
 
 function Router() {
   return (
@@ -62,72 +62,72 @@ function Router() {
 
       <Route path="/client/dashboard">
         <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
+          <ClientLayout>
             <ClientDashboard />
-          </DashboardLayout>
+          </ClientLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/client/catalog">
         <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
+          <ClientLayout>
             <ProductCatalog />
-          </DashboardLayout>
+          </ClientLayout>
         </ProtectedRoute>
       </Route>
-      <Route path="/client/launch-kit">
+      <Route path="/client/store/launch-kit">
         <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
+          <ClientLayout>
             <LaunchKit />
-          </DashboardLayout>
+          </ClientLayout>
         </ProtectedRoute>
       </Route>
-      <Route path="/client/store">
+      <Route path="/client/store/setup">
         <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
+          <ClientLayout>
             <MyStore />
-          </DashboardLayout>
+          </ClientLayout>
         </ProtectedRoute>
       </Route>
-      <Route path="/client/payments">
+      <Route path="/client/store/checklist">
         <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
-            <ClientPayments />
-          </DashboardLayout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/client/invoices">
-        <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
-            <ClientInvoices />
-          </DashboardLayout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/client/checklist">
-        <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
+          <ClientLayout>
             <ClientChecklist />
-          </DashboardLayout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/client/support">
-        <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
-            <ClientSupport />
-          </DashboardLayout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/client/profile">
-        <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
-            <ClientProfile />
-          </DashboardLayout>
+          </ClientLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/client/orders">
         <ProtectedRoute requiredRole="client">
-          <DashboardLayout userType="client">
+          <ClientLayout>
             <OrderTracking />
-          </DashboardLayout>
+          </ClientLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/client/payments/history">
+        <ProtectedRoute requiredRole="client">
+          <ClientLayout>
+            <ClientPayments />
+          </ClientLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/client/payments/invoices">
+        <ProtectedRoute requiredRole="client">
+          <ClientLayout>
+            <ClientInvoices />
+          </ClientLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/client/profile">
+        <ProtectedRoute requiredRole="client">
+          <ClientLayout>
+            <ClientProfile />
+          </ClientLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/client/support">
+        <ProtectedRoute requiredRole="client">
+          <ClientLayout>
+            <ClientSupport />
+          </ClientLayout>
         </ProtectedRoute>
       </Route>
 
@@ -188,6 +188,12 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/client/store">
+        <Redirect to="/client/store/launch-kit" />
+      </Route>
+      <Route path="/client/payments">
+        <Redirect to="/client/payments/history" />
+      </Route>
       <Route path="/client">
         <Redirect to="/client/dashboard" />
       </Route>
