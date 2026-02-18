@@ -642,11 +642,11 @@ export default function LandingPage() {
                 You bring the ambition. Launch a fully stocked, beautifully designed store in under 30 days.
               </p>
 
-              <div className="relative max-w-md">
+              <div className="relative w-full">
                 <img
                   src="/hero-store.png"
                   alt="Pikko franchise store with panda mascot"
-                  className="w-full h-auto"
+                  className="w-full h-auto rounded-xl"
                   loading="eager"
                   data-testid="img-hero-store"
                 />
@@ -654,7 +654,8 @@ export default function LandingPage() {
                   viewBox="0 0 180 110"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="absolute top-2 -right-2 md:-right-6 w-28 md:w-36 pointer-events-none select-none"
+                  className="absolute pointer-events-none select-none w-28 md:w-36"
+                  style={{ top: "-10%", right: "-10%" }}
                   aria-hidden="true"
                   data-testid="svg-curvy-arrow"
                 >
