@@ -626,7 +626,7 @@ export default function LandingPage() {
                   viewBox="0 0 180 110"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="absolute -top-8 -right-4 md:-right-10 w-32 md:w-44 pointer-events-none select-none"
+                  className="absolute top-2 -right-2 md:-right-6 w-28 md:w-36 pointer-events-none select-none"
                   aria-hidden="true"
                   data-testid="svg-curvy-arrow"
                 >
