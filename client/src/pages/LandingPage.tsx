@@ -656,8 +656,8 @@ export default function LandingPage() {
                   viewBox="0 0 180 110"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="absolute pointer-events-none select-none w-28 md:w-36"
-                  style={{ top: "-10%", right: "-10%" }}
+                  className="absolute pointer-events-none select-none w-32 md:w-[166px]"
+                  style={{ top: "-10%", right: "calc(-10% - 60px)" }}
                   aria-hidden="true"
                   data-testid="svg-curvy-arrow"
                 >
