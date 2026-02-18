@@ -2,7 +2,9 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, Search, Command, User, LogOut, LifeBuoy, HelpCircle, Settings } from "lucide-react";
+import { Bell, Search, Command, User, LogOut, LifeBuoy, HelpCircle, Settings, Home, ShoppingBag, Store, Package, CreditCard, ShoppingCart } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { LucideIcon } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -20,24 +22,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const mainNavItems = [
-  { label: "Home", href: "/client/dashboard", match: "/client/dashboard" },
-  { label: "Products", href: "/client/catalog", match: "/client/catalog" },
+const mainNavItems: { label: string; href: string; match: string; icon: LucideIcon; subTabs?: { label: string; href: string }[] }[] = [
+  { label: "Home", href: "/client/dashboard", match: "/client/dashboard", icon: Home },
+  { label: "Products", href: "/client/catalog", match: "/client/catalog", icon: ShoppingBag },
   {
     label: "My Store",
     href: "/client/store/launch-kit",
     match: "/client/store",
+    icon: Store,
     subTabs: [
       { label: "Launch Kit", href: "/client/store/launch-kit" },
       { label: "Store Setup", href: "/client/store/setup" },
       { label: "Readiness Checklist", href: "/client/store/checklist" },
     ],
   },
-  { label: "Orders", href: "/client/orders", match: "/client/orders" },
+  { label: "Orders", href: "/client/orders", match: "/client/orders", icon: Package },
   {
     label: "Payments",
     href: "/client/payments/history",
     match: "/client/payments",
+    icon: CreditCard,
     subTabs: [
       { label: "Payment History", href: "/client/payments/history" },
       { label: "Invoices", href: "/client/payments/invoices" },
@@ -71,6 +75,12 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   const { user, logout } = useAuth();
   const hasUnread = mockNotifications.some((n) => !n.read);
 
+  const { data: kitItems } = useQuery<any[]>({
+    queryKey: ["/api/kit-items", user?.clientId],
+    enabled: !!user?.clientId,
+  });
+  const kitCount = kitItems?.length || 0;
+
   const displayName = user?.name || "Partner";
   const displayRole = user?.clientName || "Partner Store";
   const initials = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -86,30 +96,32 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground font-sans">
       <header className="bg-card border-b shrink-0" data-testid="header">
-        <div className="flex h-16 items-center justify-between px-5">
+        <div className="flex h-20 items-center justify-between px-5">
           <div className="flex items-center gap-6">
             <Link href="/client/dashboard">
               <div className="flex items-center gap-2 cursor-pointer shrink-0" data-testid="link-home">
-                <img src="/logo.png" alt="Eazy to Sell" className="h-12 w-auto object-contain" loading="eager" />
+                <img src="/logo.png" alt="Eazy to Sell" className="h-16 w-auto object-contain" loading="eager" />
               </div>
             </Link>
 
-            <div className="h-5 w-px bg-border hidden md:block" />
+            <div className="h-6 w-px bg-border hidden md:block" />
 
             <nav className="hidden md:flex items-center gap-1" data-testid="nav-main">
               {mainNavItems.map((item) => {
                 const isActive = location.startsWith(item.match);
+                const Icon = item.icon;
                 return (
                   <Link key={item.label} href={item.href}>
                     <button
                       className={cn(
-                        "px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                        "flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium rounded-md transition-colors",
                         isActive
                           ? "bg-primary/10 text-primary"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       )}
                       data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                     >
+                      <Icon className="h-4 w-4 text-primary" />
                       {item.label}
                     </button>
                   </Link>
@@ -142,11 +154,24 @@ export function ClientLayout({ children }: ClientLayoutProps) {
               </Button>
             </a>
 
+            <Link href="/client/store/launch-kit">
+              <div className="relative cursor-pointer" data-testid="button-cart">
+                <div className="flex items-center justify-center h-9 w-9 rounded-full border bg-card hover-elevate transition-colors">
+                  <ShoppingCart className="h-[18px] w-[18px] text-primary" />
+                </div>
+                {kitCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full ring-2 ring-card px-1" data-testid="text-cart-count">
+                    {kitCount}
+                  </div>
+                )}
+              </div>
+            </Link>
+
             <Popover>
               <PopoverTrigger asChild>
                 <div className="relative cursor-pointer" data-testid="button-notifications">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full border bg-card hover:bg-muted transition-colors">
-                    <Bell className="h-4 w-4 text-foreground" />
+                  <div className="flex items-center justify-center h-9 w-9 rounded-full border bg-card hover-elevate transition-colors">
+                    <Bell className="h-[18px] w-[18px] text-foreground" />
                   </div>
                   {hasUnread && (
                     <div className="absolute top-0 right-0 h-2 w-2 bg-primary rounded-full ring-2 ring-card" />
