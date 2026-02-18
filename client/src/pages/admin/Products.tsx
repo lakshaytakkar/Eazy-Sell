@@ -377,8 +377,8 @@ export default function AdminProducts() {
   }, [products, searchTerm, filterCategory, filterStatus, filterMargin, sortField, sortDir, categoryMap]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginatedProducts = filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const clampedPage = Math.max(1, Math.min(currentPage, totalPages));
+  const paginatedProducts = filteredProducts.slice((clampedPage - 1) * pageSize, clampedPage * pageSize);
 
   const metrics = useMemo(() => {
     const active = products.filter((p) => p.status === "Active").length;
@@ -452,8 +452,8 @@ export default function AdminProducts() {
         <Card data-testid="card-metric-active">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Check className="h-5 w-5 text-green-600" />
+              <div className="p-2 rounded-lg bg-green-500/10 dark:bg-green-500/20">
+                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active Products</p>
@@ -465,8 +465,8 @@ export default function AdminProducts() {
         <Card data-testid="card-metric-margin">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
+              <div className="p-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/20">
+                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Avg Margin</p>
@@ -478,8 +478,8 @@ export default function AdminProducts() {
         <Card data-testid="card-metric-categories">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <Layers className="h-5 w-5 text-purple-600" />
+              <div className="p-2 rounded-lg bg-purple-500/10 dark:bg-purple-500/20">
+                <Layers className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Categories</p>
@@ -675,9 +675,9 @@ export default function AdminProducts() {
 
               <div className="flex items-center justify-between flex-wrap gap-3 mt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Showing {((safePage - 1) * pageSize) + 1}–{Math.min(safePage * pageSize, filteredProducts.length)} of {filteredProducts.length}</span>
+                  <span>Showing {((clampedPage - 1) * pageSize) + 1}–{Math.min(clampedPage * pageSize, filteredProducts.length)} of {filteredProducts.length}</span>
                   <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
-                    <SelectTrigger className="w-[80px] h-8" data-testid="select-page-size">
+                    <SelectTrigger className="w-[80px]" data-testid="select-page-size">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -689,19 +689,19 @@ export default function AdminProducts() {
                   <span>per page</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage(1)} data-testid="button-page-first">
+                  <Button variant="outline" size="sm" disabled={clampedPage <= 1} onClick={() => setCurrentPage(1)} data-testid="button-page-first">
                     <ChevronsLeft className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage((p) => p - 1)} data-testid="button-page-prev">
+                  <Button variant="outline" size="sm" disabled={clampedPage <= 1} onClick={() => setCurrentPage((p) => p - 1)} data-testid="button-page-prev">
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <span className="px-3 text-sm font-medium" data-testid="text-page-info">
-                    {safePage} / {totalPages}
+                    {clampedPage} / {totalPages}
                   </span>
-                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)} data-testid="button-page-next">
+                  <Button variant="outline" size="sm" disabled={clampedPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)} data-testid="button-page-next">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage(totalPages)} data-testid="button-page-last">
+                  <Button variant="outline" size="sm" disabled={clampedPage >= totalPages} onClick={() => setCurrentPage(totalPages)} data-testid="button-page-last">
                     <ChevronsRight className="h-4 w-4" />
                   </Button>
                 </div>

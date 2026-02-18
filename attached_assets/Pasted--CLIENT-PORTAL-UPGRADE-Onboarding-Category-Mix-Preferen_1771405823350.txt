@@ -1,0 +1,72 @@
+# CLIENT PORTAL UPGRADE — Onboarding + Category Mix Preferences
+
+## WHAT TO BUILD
+
+### 1. Client Onboarding Wizard (`/client/onboarding`)
+A 5-step guided setup flow that new clients see until their profile is complete.
+
+**Steps:**
+1. **Your Details** — name, phone, email, city, state (pre-fill from existing client data)
+2. **Store Identity** — store name (for signage), store type (High Street / Mall / Market / Residential / Commercial), floor (Ground/1st/2nd/Basement), market tier, nearby landmark
+3. **Store Dimensions** — address, area (sq ft), frontage (ft), monthly rent, photo upload via WhatsApp redirect (not file upload)
+4. **Inventory Preferences** — budget input + category mix % sliders (see #2 below) + expected daily footfall + operating hours
+5. **Review & Confirm** — read-only summary of all inputs with a basic ROI estimate, then "Complete Profile" button
+
+Save progress on each "Next" so clients can resume later. Track progress via `onboarding_step` (0-5) and `profile_completed` (boolean) on the client record.
+
+### 2. Category Mix Slider Component
+The core feature — client sets preferred inventory allocation across all categories as percentage sliders totaling 100%.
+
+**Key behaviors:**
+- One slider per category (0-40% range, step 1%)
+- Budget input at top → auto-calculates ₹ value per category (budget × percentage)
+- Total allocation bar: green at 100%, yellow if under, red if over
+- Pie chart visualization (reuse existing recharts pattern from LaunchKit)
+- "Use Recommended" button that loads smart defaults based on their store type
+- Saves to a new `client_category_preferences` table (client_id, category_id, percentage)
+- Allow partial saves (don't force 100% until final review step)
+- Make this a reusable component — also accessible from a new "Preferences" sub-tab under My Store
+
+**Recommended defaults by store type** (create sensible presets for High Street, Mall, Market, and a generic default — weight kitchen/household/toys higher for market areas, personal care/décor/bags higher for malls).
+
+### 3. New DB Fields on `clients` Table
+Add: `store_name`, `store_floor`, `store_type`, `nearby_landmark`, `monthly_rent`, `expected_footfall`, `operating_hours`, `market_type`, `profile_completed` (bool, default false), `onboarding_step` (int, default 0), `inventory_budget` (numeric, default 500000).
+
+Create table: `client_category_preferences` (id, client_id FK, category_id FK, percentage, updated_at) with unique constraint on (client_id, category_id).
+
+### 4. Fix Hardcoded Values in Client Dashboard
+- "Opening in 20 days" → calculate from `estimated_launch_date`
+- Timeline dates (Feb 15, Feb 10 etc.) → derive from actual client milestones or show "Completed"/"Pending"
+- "0 Units" inventory → count actual kit items from API
+- Static "Next Steps" → make dynamic based on current `stage` and `profile_completed`
+- Budget in LaunchKit page → pull from client's `inventory_budget` instead of hardcoded ₹5L
+
+### 5. Dashboard Onboarding CTA
+If `profile_completed === false`, show a prominent card at the top of client dashboard: "Complete Your Store Setup — Step X of 5" with a progress bar and "Continue Setup" button linking to the wizard.
+
+### 6. Fix Dead Buttons
+- Support page: Call / WhatsApp / Email buttons need real `href` links (use `tel:`, `https://wa.me/91...`, `mailto:`)
+- Dashboard "Contact Manager" → WhatsApp link to `client.managerPhone`
+- Support "View Scope" → link to `/scope`
+
+### 7. Checklist Partial Editing
+Add `client_editable` boolean to `readiness_checklist_items`. Mark items like "GST Registration", "Staff Hired", "Billing Software Installed", "CCTV Installed" as client-editable. Client can toggle these; rest remain admin-only.
+
+### 8. Admin Visibility
+Add a "Preferences" tab in admin ClientDetail page showing the client's category mix (pie chart + table, read-only) and new store identity fields.
+
+## RULES
+- Never use the word "franchise" — use "Store Launch Program" or "Partner"
+- Don't gate catalog browsing behind onboarding — only gate Launch Kit submission
+- All ₹ values in INR format with Indian number system (lakhs, not millions)
+- Never expose Yuan prices or margin calculations to client views
+- Mobile-first for all new client pages
+- Update `shared/schema.ts` with new interfaces, constants, and field types to match
+
+## PRIORITY ORDER
+1. DB migrations + schema updates
+2. Category Mix Slider component
+3. Onboarding wizard
+4. Dashboard fixes + onboarding CTA
+5. Dead button fixes + checklist editing
+6. Admin preferences tab
