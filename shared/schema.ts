@@ -123,6 +123,18 @@ export interface Client {
   storeArea: number | null;
   storeFrontage: number | null;
 
+  storeName: string | null;
+  storeFloor: string | null;
+  storeType: string | null;
+  nearbyLandmark: string | null;
+  monthlyRent: number | null;
+  expectedFootfall: number | null;
+  operatingHours: string | null;
+  marketType: string | null;
+  profileCompleted: boolean;
+  onboardingStep: number;
+  inventoryBudget: number | null;
+
   launchPhase: string | null;
   estimatedLaunchDate: string | null;
   actualLaunchDate: string | null;
@@ -191,6 +203,18 @@ export const insertClientSchema = z.object({
   notes: z.string().nullable().optional(),
   managerName: z.string().nullable().optional(),
   managerPhone: z.string().nullable().optional(),
+
+  storeName: z.string().nullable().optional(),
+  storeFloor: z.string().nullable().optional(),
+  storeType: z.string().nullable().optional(),
+  nearbyLandmark: z.string().nullable().optional(),
+  monthlyRent: z.number().nullable().optional(),
+  expectedFootfall: z.number().nullable().optional(),
+  operatingHours: z.string().nullable().optional(),
+  marketType: z.string().nullable().optional(),
+  profileCompleted: z.boolean().optional().default(false),
+  onboardingStep: z.number().optional().default(0),
+  inventoryBudget: z.number().nullable().optional(),
 
   gstNumber: z.string().nullable().optional(),
   panNumber: z.string().nullable().optional(),
@@ -309,12 +333,53 @@ export const insertPriceSettingSchema = z.object({
 });
 export type InsertPriceSetting = z.infer<typeof insertPriceSettingSchema>;
 
+export interface ClientCategoryPreference {
+  id: number;
+  clientId: number;
+  categoryId: number;
+  allocationPercent: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export const insertClientCategoryPreferenceSchema = z.object({
+  clientId: z.number(),
+  categoryId: z.number(),
+  allocationPercent: z.number().min(0).max(100).default(0),
+});
+export type InsertClientCategoryPreference = z.infer<typeof insertClientCategoryPreferenceSchema>;
+
 export interface ReadinessChecklistItem {
   id: number;
   category: string;
   label: string;
   sortOrder: number;
+  clientEditable: boolean;
 }
+
+export const STORE_TYPES = [
+  'High Street',
+  'Mall',
+  'Residential Area',
+  'Market Complex',
+  'Shopping Center',
+  'Stand-alone',
+] as const;
+
+export const MARKET_TYPES = [
+  'Tier 1 - Metro',
+  'Tier 2 - City',
+  'Tier 3 - Town',
+  'Rural',
+] as const;
+
+export const STORE_FLOORS = [
+  'Ground Floor',
+  'First Floor',
+  'Second Floor',
+  'Basement',
+  'Mezzanine',
+] as const;
 
 export interface ReadinessChecklistStatus {
   id: number;

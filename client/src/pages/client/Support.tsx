@@ -5,6 +5,7 @@ import { Phone, Mail, MessageCircle, Clock, HelpCircle, ExternalLink } from "luc
 import { useQuery } from "@tanstack/react-query";
 import type { FaqItem } from "@shared/schema";
 import { Loader } from "@/components/ui/loader";
+import { Link } from "wouter";
 
 export default function ClientSupport() {
   const { data: faqs = [], isLoading } = useQuery<FaqItem[]>({
@@ -26,9 +27,11 @@ export default function ClientSupport() {
             </div>
             <h3 className="font-semibold text-lg mb-1">Call Us</h3>
             <p className="text-sm text-muted-foreground mb-4">Speak directly with your launch manager</p>
-            <Button className="w-full bg-green-600 hover:bg-green-700" data-testid="button-call">
-              <Phone className="h-4 w-4 mr-2" /> Call Support
-            </Button>
+            <a href="tel:+919306566900">
+              <Button className="w-full bg-green-600" data-testid="button-call">
+                <Phone className="h-4 w-4 mr-2" /> Call Support
+              </Button>
+            </a>
           </CardContent>
         </Card>
 
@@ -39,9 +42,11 @@ export default function ClientSupport() {
             </div>
             <h3 className="font-semibold text-lg mb-1">WhatsApp</h3>
             <p className="text-sm text-muted-foreground mb-4">Quick responses on WhatsApp chat</p>
-            <Button className="w-full" variant="outline" data-testid="button-whatsapp">
-              <MessageCircle className="h-4 w-4 mr-2" /> Start Chat
-            </Button>
+            <a href="https://wa.me/919306566900" target="_blank" rel="noopener noreferrer">
+              <Button className="w-full" variant="outline" data-testid="button-whatsapp">
+                <MessageCircle className="h-4 w-4 mr-2" /> Start Chat
+              </Button>
+            </a>
           </CardContent>
         </Card>
 
@@ -52,9 +57,11 @@ export default function ClientSupport() {
             </div>
             <h3 className="font-semibold text-lg mb-1">Email</h3>
             <p className="text-sm text-muted-foreground mb-4">For detailed queries and documents</p>
-            <Button className="w-full" variant="outline" data-testid="button-email">
-              <Mail className="h-4 w-4 mr-2" /> Send Email
-            </Button>
+            <a href="mailto:support@eazytosell.com">
+              <Button className="w-full" variant="outline" data-testid="button-email">
+                <Mail className="h-4 w-4 mr-2" /> Send Email
+              </Button>
+            </a>
           </CardContent>
         </Card>
       </div>
@@ -120,9 +127,11 @@ export default function ClientSupport() {
             <h3 className="font-semibold text-lg">Need something else?</h3>
             <p className="text-sm text-muted-foreground">Check our full program scope and included services.</p>
           </div>
-          <Button variant="outline" className="shrink-0" data-testid="button-view-scope">
-            <ExternalLink className="h-4 w-4 mr-2" /> View Program Scope
-          </Button>
+          <Link href="/scope">
+            <Button variant="outline" className="shrink-0" data-testid="button-view-scope">
+              <ExternalLink className="h-4 w-4 mr-2" /> View Program Scope
+            </Button>
+          </Link>
         </CardContent>
       </Card>
     </div>

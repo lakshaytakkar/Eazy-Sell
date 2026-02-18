@@ -14,6 +14,7 @@ import type {
   ReadinessChecklistStatus,
   WhatsAppTemplate,
   FaqItem,
+  ClientCategoryPreference, InsertClientCategoryPreference,
 } from "@shared/schema";
 
 function snakeToCamel(obj: any): any {
@@ -103,6 +104,9 @@ export interface IStorage {
 
   getWhatsAppTemplates(): Promise<WhatsAppTemplate[]>;
   getFaqItems(): Promise<FaqItem[]>;
+
+  getCategoryPreferences(clientId: number): Promise<ClientCategoryPreference[]>;
+  upsertCategoryPreferences(clientId: number, prefs: InsertClientCategoryPreference[]): Promise<ClientCategoryPreference[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -556,6 +560,35 @@ export class DatabaseStorage implements IStorage {
 
   async getFaqItems(): Promise<FaqItem[]> {
     const { data, error } = await supabase.from("faq_items").select("*").order("sort_order");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
+  }
+
+  async getCategoryPreferences(clientId: number): Promise<ClientCategoryPreference[]> {
+    const { data, error } = await supabase
+      .from("client_category_preferences")
+      .select("*")
+      .eq("client_id", clientId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
+  }
+
+  async upsertCategoryPreferences(clientId: number, prefs: InsertClientCategoryPreference[]): Promise<ClientCategoryPreference[]> {
+    await supabase.from("client_category_preferences").delete().eq("client_id", clientId);
+
+    if (prefs.length === 0) return [];
+
+    const rows = prefs.map(p => ({
+      client_id: clientId,
+      category_id: p.categoryId,
+      allocation_percent: p.allocationPercent,
+      updated_at: new Date().toISOString(),
+    }));
+
+    const { data, error } = await supabase
+      .from("client_category_preferences")
+      .insert(rows)
+      .select();
     if (error) throw new Error(error.message);
     return (data ?? []).map(snakeToCamel);
   }

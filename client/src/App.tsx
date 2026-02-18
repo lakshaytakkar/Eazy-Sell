@@ -27,6 +27,8 @@ import ClientChecklist from "@/pages/client/Checklist";
 import ClientSupport from "@/pages/client/Support";
 import ClientProfile from "@/pages/client/Profile";
 import OrderTracking from "@/pages/client/OrderTracking";
+import ClientOnboarding from "@/pages/client/Onboarding";
+import StorePreferences from "@/pages/client/StorePreferences";
 
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminClients from "@/pages/admin/Clients";
@@ -89,6 +91,13 @@ function Router() {
         <ProtectedRoute requiredRole="client">
           <ClientLayout>
             <ClientChecklist />
+          </ClientLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/client/store/preferences">
+        <ProtectedRoute requiredRole="client">
+          <ClientLayout>
+            <StorePreferences />
           </ClientLayout>
         </ProtectedRoute>
       </Route>
@@ -182,6 +191,14 @@ function Router() {
           <DashboardLayout userType="admin">
             <AdminSettings />
           </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/client/onboarding">
+        <ProtectedRoute requiredRole="client">
+          <ClientLayout>
+            <ClientOnboarding />
+          </ClientLayout>
         </ProtectedRoute>
       </Route>
 

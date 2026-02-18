@@ -521,6 +521,50 @@ export async function registerRoutes(
     res.json(setting);
   });
 
+  // ===== CATEGORY PREFERENCES =====
+
+  app.get("/api/client-preferences/:clientId", async (req, res) => {
+    try {
+      const prefs = await storage.getCategoryPreferences(Number(req.params.clientId));
+      res.json(prefs);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/client-preferences/:clientId", async (req, res) => {
+    try {
+      const clientId = Number(req.params.clientId);
+      const { preferences } = req.body;
+      if (!Array.isArray(preferences)) {
+        return res.status(400).json({ error: "preferences must be an array" });
+      }
+      const prefs = await storage.upsertCategoryPreferences(clientId, preferences);
+      res.json(prefs);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ===== ONBOARDING STATUS =====
+
+  app.get("/api/onboarding-status/:clientId", async (req, res) => {
+    try {
+      const client = await storage.getClient(Number(req.params.clientId));
+      if (!client) return res.status(404).json({ error: "Client not found" });
+      res.json({
+        onboardingStep: client.onboardingStep ?? 0,
+        profileCompleted: client.profileCompleted ?? false,
+        storeName: client.storeName,
+        storeType: client.storeType,
+        marketType: client.marketType,
+        inventoryBudget: client.inventoryBudget,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post("/api/sync-airtable", async (_req, res) => {
     try {
       const airtableToken = process.env.AIRTABLE_API_TOKEN;

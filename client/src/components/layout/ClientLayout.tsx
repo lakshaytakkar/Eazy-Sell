@@ -34,6 +34,7 @@ const mainNavItems: { label: string; href: string; match: string; icon: LucideIc
       { label: "Launch Kit", href: "/client/store/launch-kit" },
       { label: "Store Setup", href: "/client/store/setup" },
       { label: "Readiness Checklist", href: "/client/store/checklist" },
+      { label: "Preferences", href: "/client/store/preferences" },
     ],
   },
   { label: "Orders", href: "/client/orders", match: "/client/orders", icon: Package },
