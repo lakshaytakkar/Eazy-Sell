@@ -625,9 +625,9 @@ export default function LandingPage() {
 
       {/* Hero Section - Split Layout */}
       <section className="relative overflow-hidden" data-testid="section-hero" style={{ background: "linear-gradient(135deg, hsl(32 95% 52% / 0.08) 0%, hsl(45 90% 50% / 0.05) 50%, hsl(40 33% 98%) 100%)" }}>
-        <div className="container mx-auto px-4 md:px-6 max-w-6xl py-16 md:py-24">
-          <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-            <div className="order-2 md:order-1">
+        <div className="max-w-6xl mx-auto pl-0 pr-4 md:pr-6 pt-8 md:pt-12 pb-16 md:pb-24">
+          <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
+            <div className="order-2 md:order-1 pl-4 md:pl-0">
               <div className="flex items-center gap-2 mb-6">
                 <span className="inline-block h-1 w-8 rounded-full bg-primary" />
                 <span className="text-sm font-semibold text-primary tracking-wide uppercase">Now in 15+ Cities</span>
@@ -642,11 +642,11 @@ export default function LandingPage() {
                 You bring the ambition. Launch a fully stocked, beautifully designed store in under 30 days.
               </p>
 
-              <div className="relative w-[150%] -ml-4">
+              <div className="relative w-[150%] ml-0">
                 <img
                   src="/hero-store.png"
                   alt="Pikko franchise store with panda mascot"
-                  className="w-full h-auto rounded-xl"
+                  className="w-full h-auto rounded-r-xl"
                   loading="eager"
                   data-testid="img-hero-store"
                 />
