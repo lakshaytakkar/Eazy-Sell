@@ -4,6 +4,8 @@
 Dual-portal web application for retail partnership management. Client portal for retail partners to manage store launch journey (catalog, launch kit, payments). Admin backoffice with CRM (6-factor lead scoring, 9-stage pipeline, drag-and-drop kanban), inventory, kit approvals, WhatsApp templates, and store readiness checklists. V2 price calculator engine. V3 adds CRM upgrade, public qualification form, readiness checklists, timeline tracking, WhatsApp templates, enhanced ROI calculator, FAQ, and program scope page.
 
 ## Recent Changes
+- Feb 18, 2026: Merged /qualify form into homepage hero - 4-step wizard with full qualification fields, validation, auto lead-scoring, POST to /api/qualify. Removed standalone /qualify route.
+- Feb 18, 2026: Theme updated to warm orange/yellow (primary hsl 32 95% 52%, secondary hsl 45 90% 50%). Split hero layout with store image + curvy arrow annotation. Store interior image on login page.
 - Feb 18, 2026: My Profile page at /client/profile - editable personal info, store details, business info (GST/PAN/bank), program status sidebar, form validation for GST/PAN/IFSC formats.
 - Feb 18, 2026: Order Tracking page at /client/orders - shipment timeline stepper (Order Placed→Delivered), tracking numbers with links, carrier info, expected delivery countdown, active/delivered sections.
 - Feb 18, 2026: Added client fields: gst_number, pan_number, bank_name, bank_account_number, bank_ifsc. Added orders table with status validation.
@@ -63,9 +65,8 @@ Dual-portal web application for retail partnership management. Client portal for
 - **Sub-tabs**: My Store has tabs (Launch Kit | Store Setup | Readiness Checklist), Payments has tabs (Payment History | Invoices)
 
 ## Key Routes
-- `/` - Landing page (hero, stats, quick filters, product showcase, categories, USPs, bento, FAQ, CTA)
+- `/` - Landing page (hero with 4-step qualification form + auto lead-scoring, stats, quick filters, product showcase, categories, USPs, bento, FAQ, CTA)
 - `/roi-calculator` - ROI Calculator (3 packages, scenario toggle, live calculations)
-- `/qualify` - Public partner qualification form (4-section wizard, auto lead-scoring)
 - `/scope` - Program scope page (packages, included/excluded items)
 - `/login` - Login page
 - `/client/dashboard` - Client home/dashboard

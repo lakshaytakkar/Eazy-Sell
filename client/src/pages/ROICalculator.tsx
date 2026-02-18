@@ -423,7 +423,7 @@ export default function ROICalculator() {
           <p className="text-muted-foreground mb-6">
             Take the first step towards owning your retail store
           </p>
-          <Link href="/qualify">
+          <Link href="/">
             <Button size="lg" className="px-8" data-testid="button-apply-now">
               Apply Now
             </Button>

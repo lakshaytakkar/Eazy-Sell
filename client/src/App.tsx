@@ -13,7 +13,7 @@ import { ClientLayout } from "@/components/layout/ClientLayout";
 
 import LandingPage from "@/pages/LandingPage";
 import ROICalculator from "@/pages/ROICalculator";
-import QualificationForm from "@/pages/QualificationForm";
+
 import ScopePage from "@/pages/ScopePage";
 import LoginPage from "@/pages/auth/LoginPage";
 
@@ -54,9 +54,6 @@ function Router() {
         <PublicLayout>
           <ScopePage />
         </PublicLayout>
-      </Route>
-      <Route path="/qualify">
-        <QualificationForm />
       </Route>
       <Route path="/login" component={LoginPage} />
 

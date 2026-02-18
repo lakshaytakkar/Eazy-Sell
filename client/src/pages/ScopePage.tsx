@@ -179,7 +179,7 @@ export default function ScopePage() {
           <p className="text-background/70 max-w-2xl mx-auto mb-10 text-lg leading-relaxed">
             Take the first step towards building your own retail business with Eazy to Sell's Store Launch Program.
           </p>
-          <Link href="/qualify">
+          <Link href="/">
             <Button size="lg" className="h-14 px-10 text-base font-semibold shadow-xl" data-testid="button-scope-start">
               Start Your Journey <ArrowRight className="h-5 w-5 ml-2" />
             </Button>

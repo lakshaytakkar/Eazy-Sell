@@ -5,8 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight, ChevronLeft, Phone, User, Mail, Building2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { qualificationFormSchema, type QualificationFormData } from "@shared/schema";
+import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight, ChevronLeft, Phone, User, Mail, Building2, Check } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 import storeInterior1 from "@/assets/images/store-interior-1.png";
 import shelvesCloseup from "@/assets/images/shelves-closeup.png";
@@ -110,158 +120,360 @@ function formatINR(amount: number): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
+const STEP_LABELS = ["Your Details", "Business Info", "Location", "Final Step"];
+const STEP_FIELDS: (keyof QualificationFormData)[][] = [
+  ["fullName", "phone", "email", "city", "state"],
+  ["investmentRange", "timeline", "operatorType", "previousBusiness"],
+  ["hasLocation"],
+  [],
+];
+
 function HeroRegistrationForm() {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-    city: "",
-    investment: "",
+  const [submitted, setSubmitted] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<QualificationFormData>({
+    resolver: zodResolver(qualificationFormSchema),
+    defaultValues: {
+      fullName: "",
+      phone: "",
+      email: "",
+      city: "",
+      state: "",
+      currentOccupation: "",
+      previousBusiness: "no",
+      previousBusinessDetails: "",
+      investmentRange: "below_8l",
+      timeline: "1_3_months",
+      operatorType: "self",
+      exploringOther: "no",
+      hasLocation: "not_yet",
+      locationAddress: "",
+      locationArea: undefined,
+      locationFloor: "",
+      locationFrontage: undefined,
+      monthlyRentBudget: undefined,
+      attraction: "",
+      expectedRevenue: undefined,
+      understandsNotFranchise: undefined,
+    },
   });
 
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  const mutation = useMutation({
+    mutationFn: async (data: QualificationFormData) => {
+      const payload: Record<string, any> = { ...data };
+      if (!payload.locationArea) delete payload.locationArea;
+      if (!payload.locationFrontage) delete payload.locationFrontage;
+      if (!payload.monthlyRentBudget) delete payload.monthlyRentBudget;
+      if (!payload.previousBusinessDetails) delete payload.previousBusinessDetails;
+      if (!payload.locationAddress) delete payload.locationAddress;
+      if (!payload.locationFloor) delete payload.locationFloor;
+      if (!payload.currentOccupation) delete payload.currentOccupation;
+      if (!payload.attraction) delete payload.attraction;
+      if (!payload.expectedRevenue) delete payload.expectedRevenue;
+      if (!payload.understandsNotFranchise) delete payload.understandsNotFranchise;
+      const res = await apiRequest("POST", "/api/qualify", payload);
+      return res.json();
+    },
+    onSuccess: () => setSubmitted(true),
+    onError: (err: any) => {
+      toast({ title: "Something went wrong", description: err.message, variant: "destructive" });
+    },
+  });
 
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+  const nextStep = async () => {
+    const fields = STEP_FIELDS[step - 1];
+    const valid = fields.length === 0 || await form.trigger(fields);
+    if (valid && step < 4) setStep(step + 1);
   };
+  const prevStep = () => { if (step > 1) setStep(step - 1); };
+  const onSubmit = (data: QualificationFormData) => mutation.mutate(data);
 
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
-  };
+  if (submitted) {
+    return (
+      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md text-center" data-testid="form-hero-success">
+        <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Check className="h-7 w-7 text-primary" />
+        </div>
+        <h3 className="text-xl font-bold text-foreground mb-2" data-testid="text-success-title">Application Submitted</h3>
+        <p className="text-sm text-muted-foreground mb-6" data-testid="text-success-message">
+          Thank you for your interest. Our team will connect with you within 24 hours.
+        </p>
+        <Link href="/login">
+          <Button className="w-full" data-testid="button-success-login">Go to Login</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const watchHasLocation = form.watch("hasLocation");
 
   return (
     <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md" data-testid="form-hero-registration">
-      <div className="mb-6">
+      <div className="mb-5">
         <h3 className="text-xl font-bold text-foreground mb-1">Start Your Store</h3>
-        <p className="text-sm text-muted-foreground">Fill in your details to get started</p>
+        <p className="text-sm text-muted-foreground">Step {step} of 4 &mdash; {STEP_LABELS[step - 1]}</p>
       </div>
 
       <div className="flex items-center gap-2 mb-6">
-        {[1, 2, 3].map((s) => (
-          <div key={s} className="flex items-center gap-2 flex-1">
-            <div
-              className={`h-1.5 rounded-full flex-1 transition-colors ${
-                s <= step ? "bg-primary" : "bg-border"
-              }`}
-              data-testid={`progress-step-${s}`}
-            />
+        {[1, 2, 3, 4].map((s) => (
+          <div key={s} className="flex-1">
+            <div className={`h-1.5 rounded-full transition-colors ${s <= step ? "bg-primary" : "bg-border"}`} data-testid={`progress-step-${s}`} />
           </div>
         ))}
       </div>
 
-      {step === 1 && (
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="fullName" className="text-sm font-medium mb-1.5 block text-foreground">Full Name</Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="fullName"
-                placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={(e) => updateField("fullName", e.target.value)}
-                className="pl-10"
-                data-testid="input-full-name"
-              />
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="phone" className="text-sm font-medium mb-1.5 block text-foreground">Phone Number</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="phone"
-                placeholder="+91 98765 43210"
-                value={formData.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                className="pl-10"
-                data-testid="input-phone"
-              />
-            </div>
-          </div>
-          <Button type="button" className="w-full" onClick={nextStep} data-testid="button-step-1-next">
-            Continue <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="email" className="text-sm font-medium mb-1.5 block text-foreground">Email Address</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => updateField("email", e.target.value)}
-                className="pl-10"
-                data-testid="input-email"
-              />
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="city" className="text-sm font-medium mb-1.5 block text-foreground">City</Label>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="city"
-                placeholder="e.g. Jaipur, Mumbai"
-                value={formData.city}
-                onChange={(e) => updateField("city", e.target.value)}
-                className="pl-10"
-                data-testid="input-city"
-              />
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={prevStep} className="flex-1" data-testid="button-step-2-back">Back</Button>
-            <Button type="button" onClick={nextStep} className="flex-1" data-testid="button-step-2-next">
-              Continue <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && (
-        <div className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium mb-2 block text-foreground">Investment Budget</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {["3-5 Lakhs", "5-10 Lakhs", "10-20 Lakhs", "20+ Lakhs"].map((option) => (
-                <Button
-                  key={option}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateField("investment", option)}
-                  className={`toggle-elevate ${formData.investment === option ? "toggle-elevated border-primary bg-primary/10 text-primary" : ""}`}
-                  aria-pressed={formData.investment === option}
-                  data-testid={`button-investment-${option.replace(/\s/g, "-").toLowerCase()}`}
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={prevStep} className="flex-1" data-testid="button-step-3-back">Back</Button>
-            <Link href="/login" className="flex-1">
-              <Button className="w-full" data-testid="button-submit-registration">
-                Create Account
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          {step === 1 && (
+            <div className="space-y-3">
+              <FormField control={form.control} name="fullName" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name *</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Enter your full name" className="pl-10" {...field} data-testid="input-fullName" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone *</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="+91 98765 43210" className="pl-10" {...field} data-testid="input-phone" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input type="email" placeholder="you@example.com" className="pl-10" {...field} data-testid="input-email" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="city" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City *</FormLabel>
+                    <FormControl><Input placeholder="e.g. Jaipur" {...field} data-testid="input-city" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="state" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State *</FormLabel>
+                    <FormControl><Input placeholder="e.g. Rajasthan" {...field} data-testid="input-state" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <Button type="button" className="w-full" onClick={nextStep} data-testid="button-step-1-next">
+                Continue <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
-            </Link>
-          </div>
-          <p className="text-xs text-center text-muted-foreground">
-            By continuing, you agree to our Terms & Privacy Policy
-          </p>
-        </div>
-      )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-3">
+              <FormField control={form.control} name="investmentRange" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Investment Range *</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-investmentRange"><SelectValue placeholder="Select budget" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="below_8l">Below 8 Lakhs</SelectItem>
+                      <SelectItem value="8_10l">8 - 10 Lakhs</SelectItem>
+                      <SelectItem value="10_15l">10 - 15 Lakhs</SelectItem>
+                      <SelectItem value="above_15l">Above 15 Lakhs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="timeline" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timeline to Launch *</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-timeline"><SelectValue placeholder="Select timeline" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="less_1_month">Less than 1 month</SelectItem>
+                      <SelectItem value="1_3_months">1 - 3 months</SelectItem>
+                      <SelectItem value="3_6_months">3 - 6 months</SelectItem>
+                      <SelectItem value="above_6_months">Above 6 months</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="operatorType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>How will you operate? *</FormLabel>
+                  <FormControl>
+                    <RadioGroup value={field.value} onValueChange={field.onChange} className="space-y-1" data-testid="radio-operatorType">
+                      {[{ v: "self", l: "Self-operated" }, { v: "hiring", l: "Hiring a manager" }, { v: "passive", l: "Passive investor" }].map(o => (
+                        <div key={o.v} className="flex items-center gap-2">
+                          <RadioGroupItem value={o.v} id={`op-${o.v}`} data-testid={`radio-operatorType-${o.v}`} />
+                          <Label htmlFor={`op-${o.v}`} className="font-normal text-sm">{o.l}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="previousBusiness" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Previous business experience?</FormLabel>
+                  <FormControl>
+                    <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4" data-testid="radio-previousBusiness">
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="yes" id="prevBiz-yes" data-testid="radio-previousBusiness-yes" />
+                        <Label htmlFor="prevBiz-yes" className="font-normal text-sm">Yes</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="no" id="prevBiz-no" data-testid="radio-previousBusiness-no" />
+                        <Label htmlFor="prevBiz-no" className="font-normal text-sm">No</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={prevStep} className="flex-1" data-testid="button-step-2-back">Back</Button>
+                <Button type="button" onClick={nextStep} className="flex-1" data-testid="button-step-2-next">
+                  Continue <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-3">
+              <FormField control={form.control} name="hasLocation" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Do you have a location? *</FormLabel>
+                  <FormControl>
+                    <RadioGroup value={field.value} onValueChange={field.onChange} className="space-y-1" data-testid="radio-hasLocation">
+                      {[{ v: "yes", l: "Yes, I have one" }, { v: "searching", l: "Currently searching" }, { v: "not_yet", l: "Not yet" }].map(o => (
+                        <div key={o.v} className="flex items-center gap-2">
+                          <RadioGroupItem value={o.v} id={`loc-${o.v}`} data-testid={`radio-hasLocation-${o.v}`} />
+                          <Label htmlFor={`loc-${o.v}`} className="font-normal text-sm">{o.l}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              {watchHasLocation === "yes" && (
+                <FormField control={form.control} name="locationAddress" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl><Input placeholder="Full address" {...field} data-testid="input-locationAddress" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="locationArea" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Area (sq ft)</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g. 500" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)} data-testid="input-locationArea" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="monthlyRentBudget" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rent Budget</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g. 25000" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)} data-testid="input-monthlyRentBudget" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={prevStep} className="flex-1" data-testid="button-step-3-back">Back</Button>
+                <Button type="button" onClick={nextStep} className="flex-1" data-testid="button-step-3-next">
+                  Continue <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-3">
+              <FormField control={form.control} name="attraction" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>What attracted you to Eazy to Sell?</FormLabel>
+                  <FormControl><Textarea placeholder="Tell us what excited you..." rows={3} {...field} data-testid="input-attraction" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="expectedRevenue" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expected Monthly Revenue</FormLabel>
+                  <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-expectedRevenue"><SelectValue placeholder="Select range" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="below_2l">Below 2 Lakhs</SelectItem>
+                      <SelectItem value="2_4l">2 - 4 Lakhs</SelectItem>
+                      <SelectItem value="4_6l">4 - 6 Lakhs</SelectItem>
+                      <SelectItem value="above_6l">Above 6 Lakhs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="understandsNotFranchise" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>This is a Store Launch Program, not a franchise. Understood?</FormLabel>
+                  <FormControl>
+                    <RadioGroup value={field.value ?? ""} onValueChange={field.onChange} className="flex gap-4" data-testid="radio-understandsNotFranchise">
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="yes" id="understand-yes" data-testid="radio-understandsNotFranchise-yes" />
+                        <Label htmlFor="understand-yes" className="font-normal text-sm">Yes</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="need_clarification" id="understand-no" data-testid="radio-understandsNotFranchise-no" />
+                        <Label htmlFor="understand-no" className="font-normal text-sm">Need clarification</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={prevStep} className="flex-1" data-testid="button-step-4-back">Back</Button>
+                <Button type="submit" className="flex-1" disabled={mutation.isPending} data-testid="button-submit-registration">
+                  {mutation.isPending ? "Submitting..." : "Submit Application"}
+                </Button>
+              </div>
+              <p className="text-xs text-center text-muted-foreground">
+                Our team will contact you within 24 hours
+              </p>
+            </div>
+          )}
+        </form>
+      </Form>
     </div>
   );
 }
