@@ -311,11 +311,17 @@ export default function LandingPage() {
               return (
                 <Card key={product.id} className="overflow-hidden border shadow-sm" data-testid={`product-card-${product.id}`}>
                   <div className="relative aspect-square overflow-hidden bg-muted">
-                    <img
-                      src={localImage || product.image || ""}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
+                    {(localImage || product.image) ? (
+                      <img
+                        src={localImage || product.image || undefined}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
+                        <span className="text-lg font-bold">{product.name.slice(0,2).toUpperCase()}</span>
+                      </div>
+                    )}
                     <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
                       <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 font-bold shadow-md">
                         {marginMultiplier} Margin

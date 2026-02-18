@@ -396,11 +396,11 @@ export default function AdminProducts() {
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={product.image || ""}
-                          className="h-8 w-8 rounded object-cover bg-muted"
-                          alt=""
-                        />
+                        {product.image ? (
+                          <img src={product.image} className="h-8 w-8 rounded object-cover bg-muted" alt="" />
+                        ) : (
+                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">{product.name.slice(0,2).toUpperCase()}</div>
+                        )}
                         <span data-testid={`text-product-name-${product.id}`}>{product.name}</span>
                       </div>
                     </TableCell>

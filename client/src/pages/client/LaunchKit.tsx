@@ -145,7 +145,11 @@ export default function LaunchKit() {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 rounded bg-muted overflow-hidden">
-                                                <img src={item.product.image || ""} className="h-full w-full object-cover" />
+                                                {item.product.image ? (
+                                                    <img src={item.product.image} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-muted-foreground bg-muted">{item.product.name.slice(0,2).toUpperCase()}</div>
+                                                )}
                                             </div>
                                             <div>
                                                 <div className="font-medium text-sm line-clamp-1">{item.product.name}</div>

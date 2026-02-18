@@ -18,7 +18,7 @@ export default function ClientSupport() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        <Card className="hover:shadow-md transition-shadow">
+        <Card>
           <CardContent className="p-6 text-center">
             <div className="h-14 w-14 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-4">
               <Phone className="h-7 w-7" />
@@ -31,7 +31,7 @@ export default function ClientSupport() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
+        <Card>
           <CardContent className="p-6 text-center">
             <div className="h-14 w-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-4">
               <MessageCircle className="h-7 w-7" />
@@ -44,7 +44,7 @@ export default function ClientSupport() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
+        <Card>
           <CardContent className="p-6 text-center">
             <div className="h-14 w-14 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mx-auto mb-4">
               <Mail className="h-7 w-7" />
