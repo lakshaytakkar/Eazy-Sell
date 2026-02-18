@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Edit, Plus, Search, Trash2, Upload, X, Check } from "lucide-react";
+import { Edit, Plus, Search, Trash2, Upload, X, Check, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Package, TrendingUp, Layers, BarChart3, Filter } from "lucide-react";
 import { useState, useMemo, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -97,6 +97,11 @@ function formToPayload(f: FormState): InsertProduct {
   };
 }
 
+type SortField = "name" | "storeLandingPrice" | "suggestedMrp" | "storeMarginPercent" | "exwPriceYuan";
+type SortDir = "asc" | "desc";
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+
 export default function AdminProducts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -107,6 +112,14 @@ export default function AdminProducts() {
   const [csvData, setCsvData] = useState<InsertProduct[]>([]);
   const [csvFileName, setCsvFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterMargin, setFilterMargin] = useState<string>("all");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(25);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -311,21 +324,88 @@ export default function AdminProducts() {
     return calculatePrices(inputs);
   };
 
-  const filteredProducts = products.filter((p) => {
-    const catName = categoryMap[p.categoryId]?.name || "";
-    return (
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      catName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3 ml-1 text-primary" /> : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
+  };
+
+  const filteredProducts = useMemo(() => {
+    let result = products.filter((p) => {
+      const catName = categoryMap[p.categoryId]?.name || "";
+      const matchSearch =
+        !searchTerm ||
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        catName.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchCategory = filterCategory === "all" || String(p.categoryId) === filterCategory;
+      const matchStatus = filterStatus === "all" || p.status === filterStatus;
+
+      let matchMargin = true;
+      if (filterMargin === "high") matchMargin = (p.storeMarginPercent ?? 0) >= 50;
+      else if (filterMargin === "mid") matchMargin = (p.storeMarginPercent ?? 0) >= 35 && (p.storeMarginPercent ?? 0) < 50;
+      else if (filterMargin === "low") matchMargin = (p.storeMarginPercent ?? 0) < 35;
+
+      return matchSearch && matchCategory && matchStatus && matchMargin;
+    });
+
+    result.sort((a, b) => {
+      let aVal: number | string = 0;
+      let bVal: number | string = 0;
+      switch (sortField) {
+        case "name": aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+        case "storeLandingPrice": aVal = a.storeLandingPrice ?? 0; bVal = b.storeLandingPrice ?? 0; break;
+        case "suggestedMrp": aVal = a.suggestedMrp ?? 0; bVal = b.suggestedMrp ?? 0; break;
+        case "storeMarginPercent": aVal = a.storeMarginPercent ?? 0; bVal = b.storeMarginPercent ?? 0; break;
+        case "exwPriceYuan": aVal = a.exwPriceYuan ?? 0; bVal = b.exwPriceYuan ?? 0; break;
+      }
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [products, searchTerm, filterCategory, filterStatus, filterMargin, sortField, sortDir, categoryMap]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProducts = filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const metrics = useMemo(() => {
+    const active = products.filter((p) => p.status === "Active").length;
+    const margins = products.filter((p) => p.storeMarginPercent != null).map((p) => p.storeMarginPercent!);
+    const avgMargin = margins.length > 0 ? margins.reduce((s, m) => s + m, 0) / margins.length : 0;
+    const uniqueCats = new Set(products.map((p) => p.categoryId)).size;
+    const avgLandingPrice = products.length > 0 ? products.reduce((s, p) => s + (p.storeLandingPrice ?? 0), 0) / products.length : 0;
+    return { total: products.length, active, avgMargin, uniqueCats, avgLandingPrice };
+  }, [products]);
 
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      Active: "bg-green-50 text-green-700 border-green-200",
-      Draft: "bg-yellow-50 text-yellow-700 border-yellow-200",
-      Discontinued: "bg-gray-50 text-gray-500 border-gray-200",
+      Active: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800",
+      Draft: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800",
+      Discontinued: "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700",
     };
     return styles[status] || styles.Active;
+  };
+
+  const activeFilters = [filterCategory !== "all", filterStatus !== "all", filterMargin !== "all"].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setFilterCategory("all");
+    setFilterStatus("all");
+    setFilterMargin("all");
+    setSearchTerm("");
+    setCurrentPage(1);
   };
 
   if (isLoading) {
@@ -334,12 +414,12 @@ export default function AdminProducts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-3xl font-display font-bold" data-testid="text-products-title">
             Product Management
           </h1>
-          <p className="text-muted-foreground">Add, edit, or remove inventory items.</p>
+          <p className="text-muted-foreground">Manage your inventory of {products.length.toLocaleString()} products.</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -355,111 +435,278 @@ export default function AdminProducts() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card data-testid="card-metric-total">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Products</p>
+                <p className="text-2xl font-bold">{metrics.total.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card data-testid="card-metric-active">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <Check className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Active Products</p>
+                <p className="text-2xl font-bold">{metrics.active.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card data-testid="card-metric-margin">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Avg Margin</p>
+                <p className="text-2xl font-bold">{metrics.avgMargin.toFixed(1)}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card data-testid="card-metric-categories">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <Layers className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Categories</p>
+                <p className="text-2xl font-bold">{metrics.uniqueCats}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle>Inventory List</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                data-testid="input-search-products"
-              />
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="flex items-center gap-2">
+                Inventory List
+                <Badge variant="secondary" className="font-mono text-xs">{filteredProducts.length}</Badge>
+              </CardTitle>
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  data-testid="input-search-products"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterCategory} onValueChange={(v) => { setFilterCategory(v); setCurrentPage(1); }}>
+                <SelectTrigger className="w-[160px]" data-testid="filter-category">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+                <SelectTrigger className="w-[140px]" data-testid="filter-status">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {STATUS_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterMargin} onValueChange={(v) => { setFilterMargin(v); setCurrentPage(1); }}>
+                <SelectTrigger className="w-[150px]" data-testid="filter-margin">
+                  <SelectValue placeholder="All Margins" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Margins</SelectItem>
+                  <SelectItem value="high">High (50%+)</SelectItem>
+                  <SelectItem value="mid">Mid (35-50%)</SelectItem>
+                  <SelectItem value="low">Low (&lt;35%)</SelectItem>
+                </SelectContent>
+              </Select>
+              {activeFilters > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
+                  <X className="h-3 w-3 mr-1" /> Clear {activeFilters} filter{activeFilters > 1 ? "s" : ""}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground" data-testid="text-empty-products">
-              No products found.
+            <div className="text-center py-12 text-muted-foreground" data-testid="text-empty-products">
+              <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="font-medium">No products found</p>
+              <p className="text-sm mt-1">Try adjusting your search or filters.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Landing Price</TableHead>
-                  <TableHead>MRP</TableHead>
-                  <TableHead>Store Margin %</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-3">
-                        {(() => {
-                          const imgSrc = product.image || getProductImage(product.id, categoryMap[product.categoryId]?.name || "");
-                          return imgSrc ? (
-                            <img src={imgSrc} className="h-8 w-8 rounded object-cover bg-muted" alt="" loading="lazy" decoding="async" />
-                          ) : (
-                            <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">{product.name.slice(0,2).toUpperCase()}</div>
-                          );
-                        })()}
-                        <span data-testid={`text-product-name-${product.id}`}>{product.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell data-testid={`text-product-category-${product.id}`}>
-                      {categoryMap[product.categoryId]?.name || "Uncategorized"}
-                    </TableCell>
-                    <TableCell data-testid={`text-landing-price-${product.id}`}>
-                      {INR(product.storeLandingPrice)}
-                    </TableCell>
-                    <TableCell data-testid={`text-mrp-${product.id}`}>
-                      {product.suggestedMrp != null ? `₹${product.suggestedMrp}` : "—"}
-                    </TableCell>
-                    <TableCell data-testid={`text-margin-${product.id}`}>
-                      <span
-                        className={
-                          (product.storeMarginPercent ?? 0) >= 35
-                            ? "text-green-600 font-medium"
-                            : "text-red-600 font-medium"
-                        }
-                      >
-                        {product.storeMarginPercent != null
-                          ? `${product.storeMarginPercent}%`
-                          : "—"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={statusBadge(product.status)}
-                        data-testid={`badge-status-${product.id}`}
-                      >
-                        {product.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(product)}
-                        data-testid={`button-edit-${product.id}`}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => deleteMutation.mutate(product.id)}
-                        disabled={deleteMutation.isPending}
-                        data-testid={`button-delete-${product.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <>
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <button onClick={() => toggleSort("name")} className="flex items-center font-medium" data-testid="sort-name">
+                          Product Name <SortIcon field="name" />
+                        </button>
+                      </TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>
+                        <button onClick={() => toggleSort("exwPriceYuan")} className="flex items-center font-medium" data-testid="sort-exw">
+                          EXW <SortIcon field="exwPriceYuan" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button onClick={() => toggleSort("storeLandingPrice")} className="flex items-center font-medium" data-testid="sort-landing">
+                          Landing <SortIcon field="storeLandingPrice" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button onClick={() => toggleSort("suggestedMrp")} className="flex items-center font-medium" data-testid="sort-mrp">
+                          MRP <SortIcon field="suggestedMrp" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button onClick={() => toggleSort("storeMarginPercent")} className="flex items-center font-medium" data-testid="sort-margin">
+                          Margin <SortIcon field="storeMarginPercent" />
+                        </button>
+                      </TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedProducts.map((product) => (
+                      <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            {(() => {
+                              const imgSrc = product.image || getProductImage(product.id, categoryMap[product.categoryId]?.name || "");
+                              return imgSrc ? (
+                                <img src={imgSrc} className="h-8 w-8 rounded object-cover bg-muted" alt="" loading="lazy" decoding="async" />
+                              ) : (
+                                <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">{product.name.slice(0,2).toUpperCase()}</div>
+                              );
+                            })()}
+                            <span className="max-w-[200px] truncate" data-testid={`text-product-name-${product.id}`}>{product.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell data-testid={`text-product-category-${product.id}`}>
+                          <span className="text-sm">{categoryMap[product.categoryId]?.name || "—"}</span>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm" data-testid={`text-exw-${product.id}`}>
+                          {product.exwPriceYuan != null ? `¥${product.exwPriceYuan.toFixed(2)}` : "—"}
+                        </TableCell>
+                        <TableCell data-testid={`text-landing-price-${product.id}`}>
+                          {INR(product.storeLandingPrice)}
+                        </TableCell>
+                        <TableCell data-testid={`text-mrp-${product.id}`}>
+                          {product.suggestedMrp != null ? `₹${product.suggestedMrp}` : "—"}
+                        </TableCell>
+                        <TableCell data-testid={`text-margin-${product.id}`}>
+                          <span
+                            className={
+                              (product.storeMarginPercent ?? 0) >= 50
+                                ? "text-green-600 font-medium"
+                                : (product.storeMarginPercent ?? 0) >= 35
+                                ? "text-blue-600 font-medium"
+                                : "text-red-600 font-medium"
+                            }
+                          >
+                            {product.storeMarginPercent != null
+                              ? `${product.storeMarginPercent}%`
+                              : "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={statusBadge(product.status)}
+                            data-testid={`badge-status-${product.id}`}
+                          >
+                            {product.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(product)}
+                            data-testid={`button-edit-${product.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => deleteMutation.mutate(product.id)}
+                            disabled={deleteMutation.isPending}
+                            data-testid={`button-delete-${product.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex items-center justify-between flex-wrap gap-3 mt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Showing {((safePage - 1) * pageSize) + 1}–{Math.min(safePage * pageSize, filteredProducts.length)} of {filteredProducts.length}</span>
+                  <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-[80px] h-8" data-testid="select-page-size">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZE_OPTIONS.map((s) => (
+                        <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span>per page</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage(1)} data-testid="button-page-first">
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage((p) => p - 1)} data-testid="button-page-prev">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="px-3 text-sm font-medium" data-testid="text-page-info">
+                    {safePage} / {totalPages}
+                  </span>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)} data-testid="button-page-next">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage(totalPages)} data-testid="button-page-last">
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
