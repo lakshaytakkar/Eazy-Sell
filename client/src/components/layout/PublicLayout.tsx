@@ -47,7 +47,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             <img
               src="/logo.png"
               alt="Eazy to Sell"
-              className="h-14 w-auto object-contain"
+              className="h-20 w-auto object-contain"
               loading="eager"
               data-testid="img-header-logo"
             />

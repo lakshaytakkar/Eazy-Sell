@@ -238,8 +238,8 @@ function HeroRegistrationForm() {
   const watchHasLocation = form.watch("hasLocation");
 
   return (
-    <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md" data-testid="form-hero-registration">
-      <div className="mb-5">
+    <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md flex flex-col" data-testid="form-hero-registration">
+      <div className="mb-4">
         <h3 className="text-xl font-bold text-foreground mb-1">Start Your Store</h3>
         <p className="text-sm text-muted-foreground">Step {step} of 4 &mdash; {STEP_LABELS[step - 1]}</p>
       </div>
@@ -624,21 +624,21 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen">
 
       {/* Hero Section - Split Layout */}
-      <section className="relative overflow-hidden" data-testid="section-hero" style={{ background: "linear-gradient(135deg, hsl(32 95% 52% / 0.08) 0%, hsl(45 90% 50% / 0.05) 50%, hsl(40 33% 98%) 100%)" }}>
-        <div className="w-full pl-0 pr-4 md:pr-6 pt-6 md:pt-10 pb-16 md:pb-24">
-          <div className="grid md:grid-cols-[55%_45%] gap-6 md:gap-8 items-center">
+      <section className="relative overflow-hidden" data-testid="section-hero" style={{ background: "linear-gradient(135deg, hsl(32 95% 52% / 0.08) 0%, hsl(45 90% 50% / 0.05) 50%, hsl(40 33% 98%) 100%)", minHeight: "calc(100vh - 5rem)" }}>
+        <div className="w-full pl-0 pr-4 md:pr-6 py-4 md:py-6 h-full">
+          <div className="grid md:grid-cols-[55%_45%] gap-4 md:gap-6 items-center h-full">
             <div className="order-2 md:order-1">
               <div className="pl-4 md:pl-8 lg:pl-16">
-                <div className="flex items-center gap-2 mb-6">
+                <div className="flex items-center gap-2 mb-3">
                   <span className="inline-block h-1 w-8 rounded-full bg-primary" />
                   <span className="text-sm font-semibold text-primary tracking-wide uppercase">Now in 15+ Cities</span>
                 </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-5 leading-[1.1]" data-testid="text-hero-title">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-3 leading-[1.1]" data-testid="text-hero-title">
                   Build Your Own{" "}
                   <span className="text-primary">Value Retail</span>{" "}
                   Store
                 </h1>
-                <p className="text-base md:text-lg text-muted-foreground mb-8 leading-relaxed max-w-lg">
+                <p className="text-sm md:text-base text-muted-foreground mb-4 leading-relaxed max-w-lg">
                   We provide the products, the store design, and the platform.
                   You bring the ambition. Launch a fully stocked, beautifully designed store in under 30 days.
                 </p>
@@ -696,7 +696,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="order-1 md:order-2 flex justify-center md:justify-end pr-0 md:pr-4 lg:pr-8">
+            <div className="order-1 md:order-2 flex justify-center md:justify-end items-stretch pr-0 md:pr-4 lg:pr-8">
               <HeroRegistrationForm />
             </div>
           </div>
