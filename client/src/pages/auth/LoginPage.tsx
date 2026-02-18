@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Eye, EyeOff, Store, Shield } from "lucide-react";
-import storeInterior from "@/assets/images/store-interior.png";
+import loginStoreHero from "@/assets/images/login-store-hero.png";
 
 export default function LoginPage() {
   const [_, setLocation] = useLocation();
@@ -64,7 +64,7 @@ export default function LoginPage() {
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="relative hidden lg:flex flex-col justify-between p-12 text-white overflow-hidden">
         <img
-          src={storeInterior}
+          src={loginStoreHero}
           alt="Inside a value retail store"
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
