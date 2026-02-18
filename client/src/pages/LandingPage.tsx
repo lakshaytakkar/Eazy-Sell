@@ -51,6 +51,7 @@ import prodLunchBox from "@/assets/images/prod-lunch-box.png";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { Product, Category, FaqItem } from "@shared/schema";
+import { getProductImage } from "@/lib/productImages";
 
 const categoryImages: Record<string, string> = {
   Kitchen: catKitchen,
@@ -206,6 +207,9 @@ export default function LandingPage() {
     queryKey: ["/api/faqs"],
   });
 
+  const categoryMap: Record<number, string> = {};
+  categories.forEach(c => { categoryMap[c.id] = c.name; });
+
   const categoryProductCounts = categories.map((cat) => ({
     ...cat,
     count: products.filter((p) => p.categoryId === cat.id).length,
@@ -307,13 +311,14 @@ export default function LandingPage() {
               const mrp = getProductMrp(product);
               const marginMultiplier = getMarginMultiplier(price, mrp);
               const marginPercent = mrp > 0 ? Math.round(((mrp - price) / mrp) * 100) : 0;
-              const localImage = productImages[product.id];
+              const catName = categoryMap[product.categoryId] || "";
+              const imgSrc = product.image || getProductImage(product.id, catName);
               return (
                 <Card key={product.id} className="overflow-hidden border shadow-sm" data-testid={`product-card-${product.id}`}>
                   <div className="relative aspect-square overflow-hidden bg-muted">
-                    {(localImage || product.image) ? (
+                    {imgSrc ? (
                       <img
-                        src={localImage || product.image || undefined}
+                        src={imgSrc}
                         alt={product.name}
                         className="w-full h-full object-cover"
                       />

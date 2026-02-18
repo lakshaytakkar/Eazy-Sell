@@ -14,6 +14,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Category } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
 
+import { getProductImage } from "@/lib/productImages";
+
 const COST_RANGES = [
   { label: "All Prices", value: "all", min: 0, max: Infinity },
   { label: "Under ₹30", value: "u30", min: 0, max: 30 },
@@ -367,14 +369,17 @@ export default function ProductCatalog() {
               onClick={() => setDetailProduct(product)}
             >
               <div className="aspect-square bg-muted relative">
-                {product.image ? (
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className={`w-full h-full flex flex-col items-center justify-center gap-1 ${getCategoryColor(catName)}`}>
-                    <Package className="h-8 w-8 opacity-40" />
-                    <span className="text-xs font-bold opacity-60">{getInitials(product.name)}</span>
-                  </div>
-                )}
+                {(() => {
+                  const imgSrc = product.image || getProductImage(product.id, catName);
+                  return imgSrc ? (
+                    <img src={imgSrc} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className={`w-full h-full flex flex-col items-center justify-center gap-1 ${getCategoryColor(catName)}`}>
+                      <Package className="h-8 w-8 opacity-40" />
+                      <span className="text-xs font-bold opacity-60">{getInitials(product.name)}</span>
+                    </div>
+                  );
+                })()}
                 {multiplier >= 2.5 && (
                   <div className="absolute top-1.5 right-1.5">
                     <Badge className="bg-green-600 text-white text-[10px] px-1.5 py-0 border-0 shadow-sm">{multiplier.toFixed(1)}x</Badge>
@@ -451,14 +456,17 @@ export default function ProductCatalog() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <div className="aspect-square rounded-lg bg-muted overflow-hidden mb-3">
-                      {detailProduct.image ? (
-                        <img src={detailProduct.image} alt={detailProduct.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className={`w-full h-full flex flex-col items-center justify-center gap-2 ${getCategoryColor(catName)}`}>
-                          <Package className="h-16 w-16 opacity-30" />
-                          <span className="text-lg font-bold opacity-50">{getInitials(detailProduct.name)}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const imgSrc = detailProduct.image || getProductImage(detailProduct.id, catName);
+                        return imgSrc ? (
+                          <img src={imgSrc} alt={detailProduct.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-full h-full flex flex-col items-center justify-center gap-2 ${getCategoryColor(catName)}`}>
+                            <Package className="h-16 w-16 opacity-30" />
+                            <span className="text-lg font-bold opacity-50">{getInitials(detailProduct.name)}</span>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="bg-green-50 border border-green-100 rounded-lg p-4 text-center">

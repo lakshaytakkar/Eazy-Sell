@@ -13,6 +13,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
 import type { Product, LaunchKitItem, Category } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
+import { getProductImage } from "@/lib/productImages";
 
 export default function LaunchKit() {
   const { user } = useAuth();
@@ -145,11 +146,14 @@ export default function LaunchKit() {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 rounded bg-muted overflow-hidden">
-                                                {item.product.image ? (
-                                                    <img src={item.product.image} className="h-full w-full object-cover" />
-                                                ) : (
-                                                    <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-muted-foreground bg-muted">{item.product.name.slice(0,2).toUpperCase()}</div>
-                                                )}
+                                                {(() => {
+                                                    const imgSrc = item.product.image || getProductImage(item.product.id, categoryMap[item.product.categoryId] || "");
+                                                    return imgSrc ? (
+                                                        <img src={imgSrc} alt={item.product.name} className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-muted-foreground bg-muted">{item.product.name.slice(0,2).toUpperCase()}</div>
+                                                    );
+                                                })()}
                                             </div>
                                             <div>
                                                 <div className="font-medium text-sm line-clamp-1">{item.product.name}</div>

@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { calculatePrices, getMrpOptions, type PriceInputs } from "@/lib/priceEngine";
 import type { Product, Category, InsertProduct } from "@shared/schema";
 import { PRODUCT_TAGS } from "@shared/schema";
+import { getProductImage } from "@/lib/productImages";
 
 const STATUS_OPTIONS = ["Active", "Draft", "Discontinued"] as const;
 
@@ -396,11 +397,14 @@ export default function AdminProducts() {
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
-                        {product.image ? (
-                          <img src={product.image} className="h-8 w-8 rounded object-cover bg-muted" alt="" />
-                        ) : (
-                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">{product.name.slice(0,2).toUpperCase()}</div>
-                        )}
+                        {(() => {
+                          const imgSrc = product.image || getProductImage(product.id, categoryMap[product.categoryId]?.name || "");
+                          return imgSrc ? (
+                            <img src={imgSrc} className="h-8 w-8 rounded object-cover bg-muted" alt="" />
+                          ) : (
+                            <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">{product.name.slice(0,2).toUpperCase()}</div>
+                          );
+                        })()}
                         <span data-testid={`text-product-name-${product.id}`}>{product.name}</span>
                       </div>
                     </TableCell>
