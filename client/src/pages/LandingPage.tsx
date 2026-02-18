@@ -29,15 +29,29 @@ import storeInterior2 from "@/assets/images/store-interior-2.png";
 import launchKitPackage from "@/assets/images/launch-kit-package.png";
 import designScreen from "@/assets/images/3d-design-screen.png";
 
-import catKitchen from "@/assets/images/cat-kitchen.png";
-import catStationery from "@/assets/images/cat-stationery.png";
-import catToys from "@/assets/images/cat-toys.png";
-import catDecor from "@/assets/images/cat-decor.png";
-import catStorage from "@/assets/images/cat-storage.png";
-import catBags from "@/assets/images/cat-bags.png";
-import catBathroom from "@/assets/images/cat-bathroom.png";
-import catCleaning from "@/assets/images/cat-cleaning.png";
-import catGifts from "@/assets/images/cat-gifts.png";
+import catHeadwear from "@/assets/images/cat-headwear.png";
+import catJewelry from "@/assets/images/cat-jewelry.png";
+import catDressing from "@/assets/images/cat-dressing.png";
+import catAccessory from "@/assets/images/cat-accessory.png";
+import catCraft from "@/assets/images/cat-craft.png";
+import catHousehold from "@/assets/images/cat-household.png";
+import catKitchenCleaning from "@/assets/images/cat-kitchen-cleaning.png";
+import catBambooWooden from "@/assets/images/cat-bamboo-wooden.png";
+import catDailyChemical from "@/assets/images/cat-daily-chemical.png";
+import catPaperProducts from "@/assets/images/cat-paper-products.png";
+import catBooksPens from "@/assets/images/cat-books-pens.png";
+import catEntertainment from "@/assets/images/cat-entertainment.png";
+import catHardwareTools from "@/assets/images/cat-hardware-tools.png";
+import catUtensilsTools from "@/assets/images/cat-utensils-tools.png";
+import catDryingCleaning from "@/assets/images/cat-drying-cleaning.png";
+import catHouseholdKitchen from "@/assets/images/cat-household-kitchen.png";
+import catHomeFurnishings from "@/assets/images/cat-home-furnishings.png";
+import catCottonTextile from "@/assets/images/cat-cotton-textile.png";
+import catToy from "@/assets/images/cat-toy.png";
+import catPremiumCeramics from "@/assets/images/cat-premium-ceramics.png";
+import catPremiumGlassware from "@/assets/images/cat-premium-glassware.png";
+import catForeignTrade from "@/assets/images/cat-foreign-trade.png";
+import catSpecialOffers from "@/assets/images/cat-special-offers.png";
 
 import filterHotSelling from "@/assets/images/filter-hot-selling.png";
 import filterHighMargin from "@/assets/images/filter-high-margin.png";
@@ -66,15 +80,29 @@ import type { Product, Category, FaqItem } from "@shared/schema";
 import { getProductImage } from "@/lib/productImages";
 
 const categoryImages: Record<string, string> = {
-  Kitchen: catKitchen,
-  Stationery: catStationery,
-  Toys: catToys,
-  Decor: catDecor,
-  Storage: catStorage,
-  Bags: catBags,
-  Bathroom: catBathroom,
-  Cleaning: catCleaning,
-  Gifts: catGifts,
+  "01.Headwear": catHeadwear,
+  "02.Jewelry": catJewelry,
+  "03.Dressing": catDressing,
+  "04.Accessory": catAccessory,
+  "05.Craft": catCraft,
+  "06.Household Items": catHousehold,
+  "07.Kitchen Cleaning": catKitchenCleaning,
+  "08.Bamboo and Wooden Products": catBambooWooden,
+  "09.Daily Chemical Products": catDailyChemical,
+  "10.Paper Products and Household Cleaning": catPaperProducts,
+  "11.Books and Pens": catBooksPens,
+  "12.Cultural and Entertainment Products": catEntertainment,
+  "13.Hardware Tools": catHardwareTools,
+  "14.Utensils and Tools": catUtensilsTools,
+  "15.Drying and Cleaning": catDryingCleaning,
+  "16.Household and Kitchen Supplies": catHouseholdKitchen,
+  "17.Home Furnishings": catHomeFurnishings,
+  "18.Cotton and Textile Consumption": catCottonTextile,
+  "19.Toy": catToy,
+  "20.Premium Ceramics": catPremiumCeramics,
+  "21.Premium Glassware": catPremiumGlassware,
+  "22.Foreign Trade Zone": catForeignTrade,
+  "25.Special Offers": catSpecialOffers,
 };
 
 const productImages: Record<number, string> = {
@@ -589,7 +617,7 @@ export default function LandingPage() {
   const categoryProductCounts = categories.map((cat) => ({
     ...cat,
     count: products.filter((p) => p.categoryId === cat.id).length,
-    image: categoryImages[cat.name] || catKitchen,
+    image: categoryImages[cat.name] || catHeadwear,
   }));
 
   return (
