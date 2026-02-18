@@ -485,7 +485,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[220px] md:auto-rows-[260px]">
             <div className="col-span-2 row-span-2 relative rounded-2xl overflow-hidden" data-testid="bento-store-interior">
-              <img src={storeInterior1} alt="Beautiful store interior" className="w-full h-full object-cover" />
+              <img src={storeInterior1} alt="Beautiful store interior" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 <Badge className="bg-primary text-primary-foreground mb-2">Turnkey Stores</Badge>
@@ -495,7 +495,7 @@ export default function LandingPage() {
             </div>
 
             <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-shelves">
-              <img src={shelvesCloseup} alt="Organized shelves" className="w-full h-full object-cover" />
+              <img src={shelvesCloseup} alt="Organized shelves" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Curated Product Displays</p>
@@ -503,7 +503,7 @@ export default function LandingPage() {
             </div>
 
             <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-warehouse">
-              <img src={warehouse} alt="Warehouse operations" className="w-full h-full object-cover" />
+              <img src={warehouse} alt="Warehouse operations" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Supply Chain Handled</p>
@@ -511,7 +511,7 @@ export default function LandingPage() {
             </div>
 
             <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-lifestyle">
-              <img src={storeInterior2} alt="Lifestyle store" className="w-full h-full object-cover" />
+              <img src={storeInterior2} alt="Lifestyle store" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Lifestyle Brands</p>
@@ -519,7 +519,7 @@ export default function LandingPage() {
             </div>
 
             <div className="col-span-1 row-span-1 relative rounded-2xl overflow-hidden" data-testid="bento-launch-kit">
-              <img src={launchKitPackage} alt="Launch kit package" className="w-full h-full object-cover" />
+              <img src={launchKitPackage} alt="Launch kit package" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-3 left-3 right-3">
                 <p className="text-white text-sm font-semibold">Opening Inventory Kit</p>
@@ -571,10 +571,10 @@ export default function LandingPage() {
             </div>
             <div className="space-y-4">
               <div className="rounded-2xl overflow-hidden shadow-2xl border">
-                <img src={designScreen} alt="3D store design on screen" className="w-full h-auto" />
+                <img src={designScreen} alt="3D store design on screen" className="w-full h-auto" loading="lazy" decoding="async" />
               </div>
               <div className="rounded-2xl overflow-hidden shadow-lg border">
-                <img src={layout3d} alt="3D floor plan layout" className="w-full h-auto" />
+                <img src={layout3d} alt="3D floor plan layout" className="w-full h-auto" loading="lazy" decoding="async" />
               </div>
             </div>
           </div>
@@ -665,7 +665,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="rounded-2xl overflow-hidden shadow-2xl">
-              <img src={storeExterior} alt="Store exterior" className="w-full h-auto" />
+              <img src={storeExterior} alt="Store exterior" className="w-full h-auto" loading="lazy" decoding="async" />
             </div>
             <div>
               <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Why Us</Badge>
@@ -707,7 +707,7 @@ export default function LandingPage() {
             <Card className="overflow-hidden border" data-testid="story-card-1">
               <div className="grid sm:grid-cols-5 h-full">
                 <div className="sm:col-span-2 h-64 sm:h-auto">
-                  <img src={partner1} alt="Rahul Sharma" className="w-full h-full object-cover" />
+                  <img src={partner1} alt="Rahul Sharma" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 </div>
                 <div className="sm:col-span-3 p-6 flex flex-col justify-center">
                   <div className="flex gap-1 mb-3">
@@ -737,7 +737,7 @@ export default function LandingPage() {
             <Card className="overflow-hidden border" data-testid="story-card-2">
               <div className="grid sm:grid-cols-5 h-full">
                 <div className="sm:col-span-2 h-64 sm:h-auto">
-                  <img src={partner2} alt="Priya Patel" className="w-full h-full object-cover" />
+                  <img src={partner2} alt="Priya Patel" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 </div>
                 <div className="sm:col-span-3 p-6 flex flex-col justify-center">
                   <div className="flex gap-1 mb-3">
@@ -795,7 +795,7 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="py-24 relative overflow-hidden" data-testid="section-cta">
         <div className="absolute inset-0">
-          <img src={storeInterior1} alt="Store background" className="w-full h-full object-cover" />
+          <img src={storeInterior1} alt="Store background" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-black/75" />
         </div>
         <div className="container relative z-10 mx-auto px-4 text-center max-w-3xl">

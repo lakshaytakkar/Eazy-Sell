@@ -18,12 +18,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold font-display text-xl">
-              E
-            </div>
-            <span className="font-display font-bold text-xl tracking-tight text-foreground">
-              Eazy to Sell
-            </span>
+            <img src="/logo.png" alt="Eazy to Sell" className="h-10 w-auto object-contain" loading="eager" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -72,10 +67,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 bg-primary rounded flex items-center justify-center text-primary-foreground font-bold font-display text-sm">
-                  E
-                </div>
-                <span className="font-display font-bold text-lg">Eazy to Sell</span>
+                <img src="/logo.png" alt="Eazy to Sell" className="h-8 w-auto object-contain" loading="eager" />
               </div>
               <p className="text-sm text-muted-foreground">
                 Empowering entrepreneurs to build successful retail businesses with end-to-end support.

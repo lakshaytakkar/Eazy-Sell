@@ -149,7 +149,7 @@ export default function LaunchKit() {
                                                 {(() => {
                                                     const imgSrc = item.product.image || getProductImage(item.product.id, categoryMap[item.product.categoryId] || "");
                                                     return imgSrc ? (
-                                                        <img src={imgSrc} alt={item.product.name} className="h-full w-full object-cover" />
+                                                        <img src={imgSrc} alt={item.product.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                                                     ) : (
                                                         <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-muted-foreground bg-muted">{item.product.name.slice(0,2).toUpperCase()}</div>
                                                     );

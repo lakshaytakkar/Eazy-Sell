@@ -372,7 +372,7 @@ export default function ProductCatalog() {
                 {(() => {
                   const imgSrc = product.image || getProductImage(product.id, catName);
                   return imgSrc ? (
-                    <img src={imgSrc} alt={product.name} className="w-full h-full object-cover" />
+                    <img src={imgSrc} alt={product.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className={`w-full h-full flex flex-col items-center justify-center gap-1 ${getCategoryColor(catName)}`}>
                       <Package className="h-8 w-8 opacity-40" />
@@ -459,7 +459,7 @@ export default function ProductCatalog() {
                       {(() => {
                         const imgSrc = detailProduct.image || getProductImage(detailProduct.id, catName);
                         return imgSrc ? (
-                          <img src={imgSrc} alt={detailProduct.name} className="w-full h-full object-cover" />
+                          <img src={imgSrc} alt={detailProduct.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className={`w-full h-full flex flex-col items-center justify-center gap-2 ${getCategoryColor(catName)}`}>
                             <Package className="h-16 w-16 opacity-30" />

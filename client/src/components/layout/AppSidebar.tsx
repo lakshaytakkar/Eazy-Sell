@@ -107,13 +107,8 @@ export function AppSidebar({ userType }: { userType: 'admin' | 'client' }) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="h-20 flex flex-row items-center justify-between px-5 border-b border-sidebar-border">
         <Link href={userType === 'client' ? '/client/dashboard' : '/admin/dashboard'}>
-          <div className="flex items-center gap-3 cursor-pointer" data-testid="link-home">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shrink-0">
-              <span className="text-white font-bold text-sm">ETS</span>
-            </div>
-            <span className="text-foreground text-[15px] font-semibold tracking-tight leading-none group-data-[collapsible=icon]:hidden">
-              Eazy to Sell
-            </span>
+          <div className="flex items-center gap-2 cursor-pointer" data-testid="link-home">
+            <img src="/logo.png" alt="Eazy to Sell" className="h-9 w-auto object-contain shrink-0" loading="eager" />
           </div>
         </Link>
         <button

@@ -400,7 +400,7 @@ export default function AdminProducts() {
                         {(() => {
                           const imgSrc = product.image || getProductImage(product.id, categoryMap[product.categoryId]?.name || "");
                           return imgSrc ? (
-                            <img src={imgSrc} className="h-8 w-8 rounded object-cover bg-muted" alt="" />
+                            <img src={imgSrc} className="h-8 w-8 rounded object-cover bg-muted" alt="" loading="lazy" decoding="async" />
                           ) : (
                             <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">{product.name.slice(0,2).toUpperCase()}</div>
                           );

@@ -89,13 +89,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         <div className="flex h-16 items-center justify-between px-5">
           <div className="flex items-center gap-6">
             <Link href="/client/dashboard">
-              <div className="flex items-center gap-2.5 cursor-pointer shrink-0" data-testid="link-home">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
-                  <span className="text-white font-bold text-xs">ETS</span>
-                </div>
-                <span className="text-foreground text-sm font-semibold tracking-tight leading-none hidden sm:block">
-                  Eazy to Sell
-                </span>
+              <div className="flex items-center gap-2 cursor-pointer shrink-0" data-testid="link-home">
+                <img src="/logo.png" alt="Eazy to Sell" className="h-9 w-auto object-contain" loading="eager" />
               </div>
             </Link>
 
@@ -254,23 +249,23 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         </div>
 
         {activeSubTabs && (
-          <div className="flex items-center gap-0 px-5 border-t bg-card" data-testid="nav-sub-tabs">
+          <div className="flex items-center gap-1 px-5 border-t bg-muted/30" data-testid="nav-sub-tabs">
             {activeSubTabs.map((tab) => {
               const isActive = location === tab.href;
               return (
                 <Link key={tab.href} href={tab.href}>
                   <button
                     className={cn(
-                      "relative px-4 py-2.5 text-sm font-medium transition-colors",
+                      "relative px-5 py-3.5 text-sm font-semibold transition-all rounded-t-lg",
                       isActive
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-background text-primary shadow-sm border border-b-0 border-border -mb-px"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                     )}
                     data-testid={`tab-${tab.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     {tab.label}
                     {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                      <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
                     )}
                   </button>
                 </Link>

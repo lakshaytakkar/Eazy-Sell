@@ -69,9 +69,7 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white font-bold text-xl">
-            ETS
-          </div>
+          <img src="/logo.png" alt="Eazy to Sell" className="h-12 w-auto object-contain" loading="eager" />
         </div>
 
         <div className="relative z-10 max-w-lg space-y-6">
