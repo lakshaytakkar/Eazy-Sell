@@ -1,4 +1,4 @@
-import { Bell, Search, Command, User, Settings, LogOut, Moon, Sun, PanelLeft } from "lucide-react";
+import { Bell, Search, Command, User, Settings, LogOut, PanelLeft } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -16,7 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSidebar } from "@/components/ui/sidebar";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mockNotifications = [
   {
@@ -29,7 +30,7 @@ const mockNotifications = [
   {
     id: 2,
     title: "Payment Received",
-    message: "Token amount of ₹50,000 confirmed.",
+    message: "Token amount of \u20b950,000 confirmed.",
     time: "5 hours ago",
     read: true,
   },
@@ -37,7 +38,18 @@ const mockNotifications = [
 
 export function Header({ userType }: { userType: 'admin' | 'client' }) {
   const { state, toggleSidebar } = useSidebar();
+  const { user, logout } = useAuth();
+  const [_, setLocation] = useLocation();
   const hasUnread = mockNotifications.some((n) => !n.read);
+
+  const displayName = user?.name || (userType === 'admin' ? 'Admin User' : 'Partner');
+  const displayRole = userType === 'admin' ? 'Super Admin' : (user?.clientName || 'Partner Store');
+  const initials = displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation("/login");
+  };
 
   return (
     <header className="flex h-20 items-center justify-between px-6 bg-card border-b shrink-0" data-testid="header">
@@ -143,15 +155,15 @@ export function Header({ userType }: { userType: 'admin' | 'client' }) {
             <button className="flex items-center gap-2 outline-none hover-elevate rounded-lg px-2 py-1" data-testid="button-user-menu">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-white text-sm font-medium">
-                   {userType === 'admin' ? 'AD' : 'RS'}
+                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start text-left">
-                <span className="text-[12px] font-semibold leading-[1.5] tracking-[0.02em]">
-                    {userType === 'admin' ? 'Admin User' : 'Rahul Sharma'}
+                <span className="text-[12px] font-semibold leading-[1.5] tracking-[0.02em]" data-testid="text-user-name">
+                    {displayName}
                 </span>
-                <span className="text-[12px] text-muted-foreground leading-[1.5] tracking-[0.02em]">
-                    {userType === 'admin' ? 'Super Admin' : 'Jaipur Store'}
+                <span className="text-[12px] text-muted-foreground leading-[1.5] tracking-[0.02em]" data-testid="text-user-role">
+                    {displayRole}
                 </span>
               </div>
             </button>
@@ -159,21 +171,27 @@ export function Header({ userType }: { userType: 'admin' | 'client' }) {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <Link href="/login">
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
+            {userType === 'client' && (
+              <Link href="/client/profile">
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
                 </DropdownMenuItem>
-            </Link>
+              </Link>
+            )}
+            {userType === 'admin' && (
+              <Link href="/admin/settings">
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              </Link>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleLogout} data-testid="button-logout">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

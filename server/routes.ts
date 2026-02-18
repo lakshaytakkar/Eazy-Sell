@@ -1,6 +1,7 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { supabase } from "./supabase";
 import {
   insertProductSchema,
   insertCategorySchema,
@@ -51,6 +52,172 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // ===== AUTH ROUTES =====
+
+  app.get("/api/auth/config", (_req, res) => {
+    res.json({
+      url: process.env.SUPABASE_URL,
+      anonKey: process.env.SUPABASE_ANON_KEY,
+    });
+  });
+
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { email, password, name, city, phone, role } = req.body;
+      if (!email || !password || !name || !city) {
+        return res.status(400).json({ error: "Email, password, name, and city are required" });
+      }
+
+      const userRole = role === "admin" ? "admin" : "client";
+
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { name, role: userRole },
+      });
+      if (authError) return res.status(400).json({ error: authError.message });
+
+      const authId = authData.user.id;
+
+      const dbUser = await storage.createUser({
+        username: email,
+        password: "supabase-managed",
+        role: userRole,
+        name,
+        email,
+        phone: phone || null,
+        city,
+      });
+
+      await storage.updateUserAuthId(dbUser.id, authId);
+
+      let clientId: number | null = null;
+      let clientName: string | null = null;
+      if (userRole === "client") {
+        const client = await storage.createClient({
+          name,
+          city,
+          phone: phone || null,
+          email,
+          stage: "New Inquiry",
+          leadSource: "Website",
+        } as any);
+        await storage.updateClientAuthId(client.id, authId);
+        clientId = client.id;
+        clientName = client.name;
+      }
+
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) return res.status(400).json({ error: signInError.message });
+
+      res.json({
+        user: {
+          id: dbUser.id,
+          authId,
+          username: email,
+          role: userRole,
+          name,
+          email,
+          phone: phone || null,
+          city,
+          clientId,
+          clientName,
+        },
+        session: signInData.session,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) return res.status(401).json({ error: signInError.message });
+
+      const authId = signInData.user.id;
+
+      const dbUser = await storage.getUserByAuthId(authId);
+      if (!dbUser) return res.status(404).json({ error: "User record not found. Please contact support." });
+
+      let clientId: number | null = null;
+      let clientName: string | null = null;
+      if (dbUser.role === "client") {
+        const client = await storage.getClientByAuthId(authId);
+        if (client) {
+          clientId = client.id;
+          clientName = client.name;
+        }
+      }
+
+      res.json({
+        user: {
+          id: dbUser.id,
+          authId,
+          username: dbUser.username,
+          role: dbUser.role,
+          name: dbUser.name,
+          email: dbUser.email,
+          phone: dbUser.phone,
+          city: dbUser.city,
+          clientId,
+          clientName,
+        },
+        session: signInData.session,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+      const token = authHeader.split(" ")[1];
+      const { data: { user: authUser }, error } = await supabase.auth.getUser(token);
+      if (error || !authUser) return res.status(401).json({ error: "Invalid token" });
+
+      const dbUser = await storage.getUserByAuthId(authUser.id);
+      if (!dbUser) return res.status(404).json({ error: "User not found" });
+
+      let clientId: number | null = null;
+      let clientName: string | null = null;
+      if (dbUser.role === "client") {
+        const client = await storage.getClientByAuthId(authUser.id);
+        if (client) {
+          clientId = client.id;
+          clientName = client.name;
+        }
+      }
+
+      res.json({
+        user: {
+          id: dbUser.id,
+          authId: authUser.id,
+          username: dbUser.username,
+          role: dbUser.role,
+          name: dbUser.name,
+          email: dbUser.email,
+          phone: dbUser.phone,
+          city: dbUser.city,
+          clientId,
+          clientName,
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ===== DATA ROUTES =====
 
   app.get("/api/categories", async (_req, res) => {
     const cats = await storage.getCategories();
@@ -550,6 +717,41 @@ export async function registerRoutes(
       }
 
       res.json({ message: "Seeded successfully" });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/seed-admin", async (_req, res) => {
+    try {
+      const existingAdmin = await storage.getUserByUsername("admin@eazytosell.com");
+      if (existingAdmin) {
+        return res.json({ message: "Admin already exists", userId: existingAdmin.id });
+      }
+
+      const adminEmail = "admin@eazytosell.com";
+      const adminPassword = "admin123456";
+
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: adminEmail,
+        password: adminPassword,
+        email_confirm: true,
+        user_metadata: { name: "Admin", role: "admin" },
+      });
+      if (authError) return res.status(400).json({ error: authError.message });
+
+      const dbUser = await storage.createUser({
+        username: adminEmail,
+        password: "supabase-managed",
+        role: "admin",
+        name: "Admin",
+        email: adminEmail,
+        phone: null,
+        city: "HQ",
+      });
+      await storage.updateUserAuthId(dbUser.id, authData.user.id);
+
+      res.json({ message: "Admin seeded", email: adminEmail, password: adminPassword });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

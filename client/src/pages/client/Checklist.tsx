@@ -5,14 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, ClipboardCheck } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReadinessChecklistItem, ReadinessChecklistStatus } from "@shared/schema";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ClientChecklist() {
+  const { user } = useAuth();
   const { data: items = [], isLoading: itemsLoading } = useQuery<ReadinessChecklistItem[]>({
     queryKey: ["/api/checklist/items"],
   });
 
   const { data: statuses = [], isLoading: statusLoading } = useQuery<ReadinessChecklistStatus[]>({
-    queryKey: ["/api/checklist/1"],
+    queryKey: [`/api/checklist/${user?.clientId}`],
+    enabled: !!user?.clientId,
   });
 
   const isLoading = itemsLoading || statusLoading;

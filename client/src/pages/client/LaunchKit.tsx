@@ -12,12 +12,15 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
 import type { Product, LaunchKitItem, Category } from "@shared/schema";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LaunchKit() {
+  const { user } = useAuth();
   const [budget] = useState(500000);
 
   const { data: kitItems = [], isLoading: kitLoading } = useQuery<LaunchKitItem[]>({
-    queryKey: ["/api/kit-items/1"],
+    queryKey: [`/api/kit-items/${user?.clientId}`],
+    enabled: !!user?.clientId,
   });
 
   const { data: products = [] } = useQuery<Product[]>({
@@ -40,10 +43,10 @@ export default function LaunchKit() {
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
       if (quantity <= 0) return;
-      await apiRequest("POST", "/api/kit-items", { clientId: 1, productId, quantity });
+      await apiRequest("POST", "/api/kit-items", { clientId: user!.clientId, productId, quantity });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kit-items/1"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/kit-items/${user?.clientId}`] });
     },
   });
 
@@ -52,14 +55,14 @@ export default function LaunchKit() {
       await apiRequest("DELETE", `/api/kit-items/${kitItemId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kit-items/1"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/kit-items/${user?.clientId}`] });
     },
   });
 
   const submitMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/submissions", {
-        clientId: 1,
+        clientId: user!.clientId,
         status: "pending",
         totalInvestment: totalInvestment,
         totalUnits: cart.reduce((acc, item) => acc + item.quantity, 0),

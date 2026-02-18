@@ -3,27 +3,25 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import NotFound from "@/pages/not-found";
 
-// Layouts
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
-// Pages
 import LandingPage from "@/pages/LandingPage";
 import ROICalculator from "@/pages/ROICalculator";
 import QualificationForm from "@/pages/QualificationForm";
 import ScopePage from "@/pages/ScopePage";
 import LoginPage from "@/pages/auth/LoginPage";
 
-// Client Pages
 import ClientDashboard from "@/pages/client/Dashboard";
 import ProductCatalog from "@/pages/client/Catalog";
 import LaunchKit from "@/pages/client/LaunchKit";
 import MyStore from "@/pages/client/MyStore";
 import ClientPayments from "@/pages/client/Payments";
 
-// Admin Pages
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminClients from "@/pages/admin/Clients";
 import ClientDetail from "@/pages/admin/ClientDetail";
@@ -33,7 +31,6 @@ import AdminSettings from "@/pages/admin/Settings";
 import AdminTemplates from "@/pages/admin/Templates";
 import AdminPayments from "@/pages/admin/Payments";
 
-// Additional Client Pages
 import ClientInvoices from "@/pages/client/Invoices";
 import ClientChecklist from "@/pages/client/Checklist";
 import ClientSupport from "@/pages/client/Support";
@@ -43,7 +40,6 @@ import OrderTracking from "@/pages/client/OrderTracking";
 function Router() {
   return (
     <Switch>
-      {/* Public Routes */}
       <Route path="/">
         <PublicLayout>
           <LandingPage />
@@ -64,101 +60,134 @@ function Router() {
       </Route>
       <Route path="/login" component={LoginPage} />
 
-      {/* Client Routes */}
       <Route path="/client/dashboard">
-        <DashboardLayout userType="client">
-          <ClientDashboard />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <ClientDashboard />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/catalog">
-        <DashboardLayout userType="client">
-          <ProductCatalog />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <ProductCatalog />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/launch-kit">
-        <DashboardLayout userType="client">
-          <LaunchKit />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <LaunchKit />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/store">
-        <DashboardLayout userType="client">
-          <MyStore />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <MyStore />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/payments">
-        <DashboardLayout userType="client">
-          <ClientPayments />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <ClientPayments />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/invoices">
-        <DashboardLayout userType="client">
-          <ClientInvoices />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <ClientInvoices />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/checklist">
-        <DashboardLayout userType="client">
-          <ClientChecklist />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <ClientChecklist />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/support">
-        <DashboardLayout userType="client">
-          <ClientSupport />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <ClientSupport />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/profile">
-        <DashboardLayout userType="client">
-          <ClientProfile />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <ClientProfile />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/client/orders">
-        <DashboardLayout userType="client">
-          <OrderTracking />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="client">
+          <DashboardLayout userType="client">
+            <OrderTracking />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
 
-      {/* Admin Routes */}
       <Route path="/admin/dashboard">
-        <DashboardLayout userType="admin">
-          <AdminDashboard />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <AdminDashboard />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/admin/clients/:id">
-        <DashboardLayout userType="admin">
-          <ClientDetail />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <ClientDetail />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/admin/clients">
-        <DashboardLayout userType="admin">
-          <AdminClients />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <AdminClients />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/admin/products">
-        <DashboardLayout userType="admin">
-          <AdminProducts />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <AdminProducts />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/admin/reviews">
-        <DashboardLayout userType="admin">
-          <KitReviews />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <KitReviews />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/admin/templates">
-        <DashboardLayout userType="admin">
-          <AdminTemplates />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <AdminTemplates />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/admin/payments">
-        <DashboardLayout userType="admin">
-          <AdminPayments />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <AdminPayments />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/admin/settings">
-        <DashboardLayout userType="admin">
-          <AdminSettings />
-        </DashboardLayout>
+        <ProtectedRoute requiredRole="admin">
+          <DashboardLayout userType="admin">
+            <AdminSettings />
+          </DashboardLayout>
+        </ProtectedRoute>
       </Route>
 
-      {/* Redirects */}
       <Route path="/client">
         <Redirect to="/client/dashboard" />
       </Route>
@@ -174,10 +203,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

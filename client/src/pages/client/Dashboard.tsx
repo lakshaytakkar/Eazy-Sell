@@ -5,10 +5,13 @@ import { AlertCircle, CheckCircle2, ChevronRight, Clock, MapPin, Package, Phone 
 import { useQuery } from "@tanstack/react-query";
 import { PIPELINE_STAGES } from "@shared/schema";
 import type { Client } from "@shared/schema";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ClientDashboard() {
+  const { user } = useAuth();
   const { data: client, isLoading } = useQuery<Client>({
-    queryKey: ["/api/clients/1"],
+    queryKey: [`/api/clients/${user?.clientId}`],
+    enabled: !!user?.clientId,
   });
 
   if (isLoading || !client) {

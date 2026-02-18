@@ -43,7 +43,12 @@ function camelToSnake(obj: any): any {
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByAuthId(authId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserAuthId(id: number, authId: string): Promise<void>;
+
+  getClientByAuthId(authId: string): Promise<Client | undefined>;
+  updateClientAuthId(id: number, authId: string): Promise<void>;
 
   getCategories(): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
@@ -111,10 +116,28 @@ export class DatabaseStorage implements IStorage {
     return data ? snakeToCamel(data) : undefined;
   }
 
+  async getUserByAuthId(authId: string): Promise<User | undefined> {
+    const { data } = await supabase.from("users").select("*").eq("auth_id", authId).single();
+    return data ? snakeToCamel(data) : undefined;
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     const { data, error } = await supabase.from("users").insert(camelToSnake(user)).select().single();
     if (error) throw new Error(error.message);
     return snakeToCamel(data);
+  }
+
+  async updateUserAuthId(id: number, authId: string): Promise<void> {
+    await supabase.from("users").update({ auth_id: authId }).eq("id", id);
+  }
+
+  async getClientByAuthId(authId: string): Promise<Client | undefined> {
+    const { data } = await supabase.from("clients").select("*").eq("auth_id", authId).single();
+    return data ? snakeToCamel(data) : undefined;
+  }
+
+  async updateClientAuthId(id: number, authId: string): Promise<void> {
+    await supabase.from("clients").update({ auth_id: authId }).eq("id", id);
   }
 
   async getCategories(): Promise<Category[]> {

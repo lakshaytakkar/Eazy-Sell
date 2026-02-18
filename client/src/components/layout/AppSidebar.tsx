@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -92,8 +93,9 @@ const bottomItems = [
 ];
 
 export function AppSidebar({ userType }: { userType: 'admin' | 'client' }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toggleSidebar } = useSidebar();
+  const { logout } = useAuth();
 
   const isActive = (href: string) => {
     return location === href;
@@ -170,14 +172,14 @@ export function AppSidebar({ userType }: { userType: 'admin' | 'client' }) {
             </SidebarMenuItem>
           ))}
           <SidebarMenuItem>
-            <Link href="/login">
-                <SidebarMenuButton
-                className="h-9 text-[14px] font-medium text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md"
-                >
+              <SidebarMenuButton
+                className="h-9 text-[14px] font-medium text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer"
+                onClick={async () => { await logout(); setLocation("/login"); }}
+                data-testid="button-sidebar-logout"
+              >
                 <LogOut className="h-[18px] w-[18px]" />
                 <span>Logout</span>
-                </SidebarMenuButton>
-            </Link>
+              </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

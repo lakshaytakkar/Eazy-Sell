@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Category } from "@shared/schema";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PRICE_BANDS = [
   { label: "All", min: 0, max: Infinity },
@@ -30,6 +31,7 @@ const MRP_BANDS = [
 const TAG_FILTERS = ["Bestseller", "New Arrival", "Recommended", "High Margin", "Fast Mover", "Seasonal"];
 
 export default function ProductCatalog() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedPriceBand, setSelectedPriceBand] = useState(0);
@@ -49,10 +51,10 @@ export default function ProductCatalog() {
 
   const addToKitMutation = useMutation({
     mutationFn: async (productId: number) => {
-      await apiRequest("POST", "/api/kit-items", { clientId: 1, productId, quantity: 1 });
+      await apiRequest("POST", "/api/kit-items", { clientId: user!.clientId, productId, quantity: 1 });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kit-items/1"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/kit-items/${user?.clientId}`] });
       toast({ title: "Added to Kit", description: "Product added to your launch kit." });
     },
   });

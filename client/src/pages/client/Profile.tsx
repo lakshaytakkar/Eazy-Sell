@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { getScoreLabel, PACKAGES } from "@shared/schema";
 import type { Client } from "@shared/schema";
+import { useAuth } from "@/contexts/AuthContext";
 
 function formatINR(amount: number | null | undefined): string {
   if (!amount) return "₹0";
@@ -17,18 +18,20 @@ function formatINR(amount: number | null | undefined): string {
 }
 
 export default function ClientProfile() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: client, isLoading } = useQuery<Client>({
-    queryKey: ["/api/clients/1"],
+    queryKey: [`/api/clients/${user?.clientId}`],
+    enabled: !!user?.clientId,
   });
 
   const updateMutation = useMutation({
     mutationFn: async (data: Record<string, any>) => {
-      const res = await fetch("/api/clients/1", {
+      const res = await fetch(`/api/clients/${user?.clientId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -37,7 +40,7 @@ export default function ClientProfile() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clients/1"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${user?.clientId}`] });
       toast({ title: "Profile Updated", description: "Your profile has been saved successfully." });
       setEditing(false);
       setErrors({});

@@ -5,10 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Payment } from "@shared/schema";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ClientPayments() {
+  const { user } = useAuth();
   const { data: payments = [], isLoading } = useQuery<Payment[]>({
-    queryKey: ["/api/payments/client/1"],
+    queryKey: [`/api/payments/client/${user?.clientId}`],
+    enabled: !!user?.clientId,
   });
 
   if (isLoading) {

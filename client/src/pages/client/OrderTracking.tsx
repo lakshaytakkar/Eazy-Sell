@@ -5,6 +5,7 @@ import { Package, Truck, CheckCircle2, Clock, MapPin, ExternalLink, PackageOpen,
 import { useQuery } from "@tanstack/react-query";
 import { ORDER_STATUSES } from "@shared/schema";
 import type { Order } from "@shared/schema";
+import { useAuth } from "@/contexts/AuthContext";
 
 const statusConfig: Record<string, { color: string; bgColor: string; icon: typeof Package }> = {
   "Order Placed": { color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200", icon: Package },
@@ -192,8 +193,10 @@ function OrderCard({ order }: { order: Order }) {
 }
 
 export default function OrderTracking() {
+  const { user } = useAuth();
   const { data: orders, isLoading } = useQuery<Order[]>({
-    queryKey: ["/api/orders/1"],
+    queryKey: [`/api/orders/${user?.clientId}`],
+    enabled: !!user?.clientId,
   });
 
   if (isLoading) {
