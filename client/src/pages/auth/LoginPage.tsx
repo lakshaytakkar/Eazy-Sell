@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Eye, EyeOff, Store, Shield, Phone } from "lucide-react";
 import loginStoreHero from "@/assets/images/login-store-hero.png";
+import { InlineLoader } from "@/components/ui/loader";
 
 export default function LoginPage() {
   const [_, setLocation] = useLocation();
@@ -150,7 +151,7 @@ export default function LoginPage() {
                 disabled={isLoading}
                 data-testid="button-submit-auth"
               >
-                {isLoading ? "Please wait..." : "Sign In"}
+                {isLoading ? <><InlineLoader className="mr-2" /> Signing in...</> : "Sign In"}
                 {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>

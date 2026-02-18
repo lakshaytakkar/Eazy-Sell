@@ -25,6 +25,7 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
+import { PageLoader } from "@/components/ui/loader";
 
 const columns = [
   { id: "pipeline", title: "Pipeline", stages: ["New Inquiry", "Qualification Sent", "Discovery Call"], defaultStage: "New Inquiry" },
@@ -380,11 +381,7 @@ export default function AdminClients() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64" data-testid="loading-state">
-        Loading...
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

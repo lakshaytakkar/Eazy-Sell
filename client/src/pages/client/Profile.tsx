@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { getScoreLabel, PACKAGES } from "@shared/schema";
 import type { Client } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageLoader } from "@/components/ui/loader";
 
 function formatINR(amount: number | null | undefined): string {
   if (!amount) return "₹0";
@@ -51,7 +52,7 @@ export default function ClientProfile() {
   });
 
   if (isLoading || !client) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const startEditing = () => {

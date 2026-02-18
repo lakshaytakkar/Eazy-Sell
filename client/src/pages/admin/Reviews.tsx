@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
 import type { LaunchKitSubmission, Client } from "@shared/schema";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function KitReviews() {
   const { data: submissions = [], isLoading } = useQuery<LaunchKitSubmission[]>({
@@ -29,7 +30,7 @@ export default function KitReviews() {
   });
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const pendingSubmissions = submissions.filter(s => s.status === "pending");

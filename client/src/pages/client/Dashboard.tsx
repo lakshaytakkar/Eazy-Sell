@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PIPELINE_STAGES } from "@shared/schema";
 import type { Client } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function ClientDashboard() {
   const { user } = useAuth();
@@ -15,7 +16,7 @@ export default function ClientDashboard() {
   });
 
   if (isLoading || !client) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const stages = PIPELINE_STAGES.filter(s => s !== 'Lost');

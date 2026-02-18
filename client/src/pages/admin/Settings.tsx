@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Settings, Pencil, Check, X, Save, RefreshCw } from "lucide-react";
 import type { PriceSetting, Category } from "@shared/schema";
+import { Loader } from "@/components/ui/loader";
 
 const INR = (v: number | null | undefined) =>
   v != null ? `₹${v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
@@ -210,7 +211,7 @@ function CategoryDutyTable() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading categories...</div>;
+    return <Loader className="py-8" />;
   }
 
   return (
@@ -373,7 +374,7 @@ export default function AdminSettings() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading settings...</div>
+        <Loader className="py-12" />
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {SECTIONS.map((section) => (

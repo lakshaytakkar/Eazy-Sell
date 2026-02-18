@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { getScoreLabel } from "@shared/schema";
 import type { Client, Product, LaunchKitSubmission, Payment } from "@shared/schema";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function AdminDashboard() {
   const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
@@ -23,7 +24,7 @@ export default function AdminDashboard() {
   const isLoading = clientsLoading;
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const totalClients = clients.length;

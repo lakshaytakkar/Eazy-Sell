@@ -15,6 +15,7 @@ import type { Product, Category } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { getProductImage } from "@/lib/productImages";
+import { PageLoader } from "@/components/ui/loader";
 
 const COST_RANGES = [
   { label: "All Prices", value: "all", min: 0, max: Infinity },
@@ -232,7 +233,7 @@ export default function ProductCatalog() {
   };
 
   if (productsLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   return (

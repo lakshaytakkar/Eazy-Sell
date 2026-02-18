@@ -16,6 +16,7 @@ import { calculatePrices, getMrpOptions, type PriceInputs } from "@/lib/priceEng
 import type { Product, Category, InsertProduct } from "@shared/schema";
 import { PRODUCT_TAGS } from "@shared/schema";
 import { getProductImage } from "@/lib/productImages";
+import { PageLoader } from "@/components/ui/loader";
 
 const STATUS_OPTIONS = ["Active", "Draft", "Discontinued"] as const;
 
@@ -328,11 +329,7 @@ export default function AdminProducts() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64" data-testid="loading-state">
-        Loading...
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

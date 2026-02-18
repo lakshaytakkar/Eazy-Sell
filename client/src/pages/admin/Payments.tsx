@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "wouter";
 import type { Payment, Client } from "@shared/schema";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function AdminPayments() {
   const { data: payments = [], isLoading: paymentsLoading } = useQuery<Payment[]>({
@@ -21,7 +22,7 @@ export default function AdminPayments() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   if (paymentsLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const clientMap = new Map(clients.map(c => [c.id, c]));

@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Phone, Mail, MessageCircle, Clock, HelpCircle, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { FaqItem } from "@shared/schema";
+import { Loader } from "@/components/ui/loader";
 
 export default function ClientSupport() {
   const { data: faqs = [], isLoading } = useQuery<FaqItem[]>({
@@ -93,7 +94,7 @@ export default function ClientSupport() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-muted-foreground text-center py-8">Loading FAQs...</p>
+            <Loader className="py-8" />
           ) : faqs.length === 0 ? (
             <p className="text-muted-foreground text-center py-8" data-testid="text-empty-faqs">No FAQs available at the moment.</p>
           ) : (

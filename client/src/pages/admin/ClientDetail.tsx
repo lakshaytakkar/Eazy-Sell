@@ -59,6 +59,7 @@ import {
 } from "lucide-react";
 import type { Client, Payment, ReadinessChecklistItem, ReadinessChecklistStatus } from "@shared/schema";
 import { PIPELINE_STAGES, LAUNCH_PHASES, getScoreLabel } from "@shared/schema";
+import { PageLoader } from "@/components/ui/loader";
 
 const stageColors: Record<string, string> = {
   "New Inquiry": "bg-slate-100 text-slate-700 border-slate-200",
@@ -202,11 +203,7 @@ export default function ClientDetail() {
   }, {});
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground" data-testid="loading-state">
-        Loading client...
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!client) {

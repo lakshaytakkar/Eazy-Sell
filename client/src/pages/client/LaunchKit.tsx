@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Product, LaunchKitItem, Category } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProductImage } from "@/lib/productImages";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function LaunchKit() {
   const { user } = useAuth();
@@ -103,7 +104,7 @@ export default function LaunchKit() {
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
   if (kitLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   return (

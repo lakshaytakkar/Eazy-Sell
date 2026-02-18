@@ -6,6 +6,7 @@ import { Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Payment } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function ClientPayments() {
   const { user } = useAuth();
@@ -15,7 +16,7 @@ export default function ClientPayments() {
   });
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const totalPaid = payments.filter(p => p.status === "Paid").reduce((sum, p) => sum + p.amount, 0);

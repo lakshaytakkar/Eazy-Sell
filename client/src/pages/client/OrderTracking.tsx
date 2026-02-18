@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ORDER_STATUSES } from "@shared/schema";
 import type { Order } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageLoader } from "@/components/ui/loader";
 
 const statusConfig: Record<string, { color: string; bgColor: string; icon: typeof Package }> = {
   "Order Placed": { color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200", icon: Package },
@@ -200,7 +201,7 @@ export default function OrderTracking() {
   });
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const activeOrders = (orders || []).filter(o => o.status !== "Delivered");

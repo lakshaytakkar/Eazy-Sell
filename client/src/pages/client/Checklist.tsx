@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, ClipboardCheck } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReadinessChecklistItem, ReadinessChecklistStatus } from "@shared/schema";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function ClientChecklist() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function ClientChecklist() {
   const isLoading = itemsLoading || statusLoading;
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64" data-testid="loading-state">Loading...</div>;
+    return <PageLoader />;
   }
 
   const completedIds = new Set(statuses.filter(s => s.completed).map(s => s.itemId));
