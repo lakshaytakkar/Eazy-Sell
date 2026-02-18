@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight, ChevronLeft } from "lucide-react";
+import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight, ChevronLeft, Phone, User, Mail, Building2 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
 
 import storeInterior1 from "@/assets/images/store-interior-1.png";
@@ -108,6 +110,162 @@ function formatINR(amount: number): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
+function HeroRegistrationForm() {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    city: "",
+    investment: "",
+  });
+
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const nextStep = () => {
+    if (step < 3) setStep(step + 1);
+  };
+
+  const prevStep = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
+  return (
+    <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md" data-testid="form-hero-registration">
+      <div className="mb-6">
+        <h3 className="text-xl font-bold text-foreground mb-1">Start Your Store</h3>
+        <p className="text-sm text-muted-foreground">Fill in your details to get started</p>
+      </div>
+
+      <div className="flex items-center gap-2 mb-6">
+        {[1, 2, 3].map((s) => (
+          <div key={s} className="flex items-center gap-2 flex-1">
+            <div
+              className={`h-1.5 rounded-full flex-1 transition-colors ${
+                s <= step ? "bg-primary" : "bg-border"
+              }`}
+              data-testid={`progress-step-${s}`}
+            />
+          </div>
+        ))}
+      </div>
+
+      {step === 1 && (
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="fullName" className="text-sm font-medium mb-1.5 block text-foreground">Full Name</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="fullName"
+                placeholder="Enter your full name"
+                value={formData.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
+                className="pl-10"
+                data-testid="input-full-name"
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="phone" className="text-sm font-medium mb-1.5 block text-foreground">Phone Number</Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="phone"
+                placeholder="+91 98765 43210"
+                value={formData.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+                className="pl-10"
+                data-testid="input-phone"
+              />
+            </div>
+          </div>
+          <Button type="button" className="w-full" onClick={nextStep} data-testid="button-step-1-next">
+            Continue <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="email" className="text-sm font-medium mb-1.5 block text-foreground">Email Address</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                className="pl-10"
+                data-testid="input-email"
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="city" className="text-sm font-medium mb-1.5 block text-foreground">City</Label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="city"
+                placeholder="e.g. Jaipur, Mumbai"
+                value={formData.city}
+                onChange={(e) => updateField("city", e.target.value)}
+                className="pl-10"
+                data-testid="input-city"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={prevStep} className="flex-1" data-testid="button-step-2-back">Back</Button>
+            <Button type="button" onClick={nextStep} className="flex-1" data-testid="button-step-2-next">
+              Continue <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium mb-2 block text-foreground">Investment Budget</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {["3-5 Lakhs", "5-10 Lakhs", "10-20 Lakhs", "20+ Lakhs"].map((option) => (
+                <Button
+                  key={option}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateField("investment", option)}
+                  className={`toggle-elevate ${formData.investment === option ? "toggle-elevated border-primary bg-primary/10 text-primary" : ""}`}
+                  aria-pressed={formData.investment === option}
+                  data-testid={`button-investment-${option.replace(/\s/g, "-").toLowerCase()}`}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={prevStep} className="flex-1" data-testid="button-step-3-back">Back</Button>
+            <Link href="/login" className="flex-1">
+              <Button className="w-full" data-testid="button-submit-registration">
+                Create Account
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-center text-muted-foreground">
+            By continuing, you agree to our Terms & Privacy Policy
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function QuickFilterCarousel({ filters }: { filters: { label: string; image: string }[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -140,32 +298,36 @@ function QuickFilterCarousel({ filters }: { filters: { label: string; image: str
   };
 
   return (
-    <section className="py-10 bg-background border-b" data-testid="section-quick-filters">
-      <div className="container mx-auto px-4 max-w-6xl">
-        <div className="flex items-center justify-between mb-6">
+    <section className="py-12 bg-background" data-testid="section-quick-filters">
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
           <div>
-            <h3 className="text-lg font-bold font-display">Browse by Collection</h3>
-            <p className="text-sm text-muted-foreground">Curated product tags for every retail niche</p>
+            <h3 className="text-xl font-bold">Browse by Collection</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">Curated product tags for every retail niche</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              size="icon"
+              variant="outline"
               onClick={() => scroll("left")}
               disabled={!canScrollLeft}
-              className="h-9 w-9 rounded-full border flex items-center justify-center bg-background shadow-sm transition-opacity disabled:opacity-30"
+              className="rounded-full"
               aria-label="Scroll left"
               data-testid="button-filter-scroll-left"
             >
               <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
               onClick={() => scroll("right")}
               disabled={!canScrollRight}
-              className="h-9 w-9 rounded-full border flex items-center justify-center bg-background shadow-sm transition-opacity disabled:opacity-30"
+              className="rounded-full"
               aria-label="Scroll right"
               data-testid="button-filter-scroll-right"
             >
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
         <div
@@ -178,11 +340,13 @@ function QuickFilterCarousel({ filters }: { filters: { label: string; image: str
               className="flex flex-col items-center gap-2.5 shrink-0 cursor-pointer snap-start"
               data-testid={`filter-${filter.label.toLowerCase().replace(/\s/g, "-")}`}
             >
-              <div className="h-24 w-24 md:h-28 md:w-28 rounded-full overflow-hidden border border-border shadow-md">
+              <div className="h-24 w-24 md:h-28 md:w-28 rounded-full overflow-hidden border-2 border-primary/20 shadow-md">
                 <img
                   src={filter.image}
                   alt={filter.label}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <span className="text-xs md:text-sm font-semibold text-muted-foreground whitespace-nowrap">{filter.label}</span>
@@ -218,63 +382,63 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative py-24 md:py-36 overflow-hidden" data-testid="section-hero">
-        <div className="absolute inset-0 z-0">
-          <img
-            src={storeInterior1}
-            alt="Modern Retail Store Interior"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
-        </div>
 
-        <div className="container relative z-10 mx-auto px-4 max-w-6xl">
-          <div className="max-w-2xl">
-            <Badge className="bg-primary text-primary-foreground mb-6 text-sm px-4 py-1.5 font-medium" data-testid="badge-hero-cta">
-              Now launching in 15+ cities across India
-            </Badge>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight text-white mb-6 leading-[1.1]" data-testid="text-hero-title">
-              Build Your Own <span className="text-primary">Value Retail Empire</span>
-            </h1>
-            <p className="text-lg md:text-xl text-white/80 mb-10 leading-relaxed max-w-xl">
-              We provide the products, the store design, and the platform. You bring the ambition. Launch a fully stocked, beautifully designed store in under 30 days.
-            </p>
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              <Link href="/login">
-                <Button size="lg" className="h-14 px-10 text-base font-semibold shadow-xl" data-testid="button-hero-start">
-                  Start Your Journey <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/roi-calculator">
-                <Button variant="outline" size="lg" className="h-14 px-10 text-base font-semibold bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 hover:text-white" data-testid="button-hero-roi">
-                  Calculate Your ROI
-                </Button>
-              </Link>
+      {/* Hero Section - Split Layout */}
+      <section className="relative overflow-hidden" data-testid="section-hero" style={{ background: "linear-gradient(135deg, hsl(32 95% 52% / 0.08) 0%, hsl(45 90% 50% / 0.05) 50%, hsl(40 33% 98%) 100%)" }}>
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl py-16 md:py-24">
+          <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+            <div className="order-2 md:order-1">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="inline-block h-1 w-8 rounded-full bg-primary" />
+                <span className="text-sm font-semibold text-primary tracking-wide uppercase">Now in 15+ Cities</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-5 leading-[1.1]" data-testid="text-hero-title">
+                Build Your Own{" "}
+                <span className="text-primary">Value Retail</span>{" "}
+                Store
+              </h1>
+              <p className="text-base md:text-lg text-muted-foreground mb-8 leading-relaxed max-w-lg">
+                We provide the products, the store design, and the platform.
+                You bring the ambition. Launch a fully stocked, beautifully designed store in under 30 days.
+              </p>
+
+              <div className="relative max-w-md">
+                <img
+                  src="/hero-store.png"
+                  alt="Pikko franchise store with panda mascot"
+                  className="w-full h-auto"
+                  loading="eager"
+                  data-testid="img-hero-store"
+                />
+              </div>
+            </div>
+
+            <div className="order-1 md:order-2 flex justify-center md:justify-end">
+              <HeroRegistrationForm />
             </div>
           </div>
         </div>
       </section>
 
       {/* Stats Bar */}
-      <section className="py-8 border-b bg-foreground text-background" data-testid="section-stats">
-        <div className="container mx-auto px-4">
+      <section className="py-10 border-y bg-[hsl(30,15%,10%)] dark:bg-[hsl(25,15%,6%)]" data-testid="section-stats">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-3xl md:text-4xl font-bold font-display text-primary mb-1" data-testid="stat-stores">30+</div>
-              <div className="text-sm text-background/60 font-medium">Active Stores</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1" data-testid="stat-stores">30+</div>
+              <div className="text-sm font-medium text-white/50">Active Stores</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold font-display text-primary mb-1" data-testid="stat-revenue">₹15L+</div>
-              <div className="text-sm text-background/60 font-medium">Avg. Annual Revenue</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1" data-testid="stat-revenue">15L+</div>
+              <div className="text-sm font-medium text-white/50">Avg. Annual Revenue</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold font-display text-primary mb-1" data-testid="stat-margin">45%</div>
-              <div className="text-sm text-background/60 font-medium">Avg. Profit Margin</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1" data-testid="stat-margin">45%</div>
+              <div className="text-sm font-medium text-white/50">Avg. Profit Margin</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold font-display text-primary mb-1" data-testid="stat-products">35,000+</div>
-              <div className="text-sm text-background/60 font-medium">SKUs Available</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1" data-testid="stat-products">35,000+</div>
+              <div className="text-sm font-medium text-white/50">SKUs Available</div>
             </div>
           </div>
         </div>
@@ -283,25 +447,25 @@ export default function LandingPage() {
       {/* Quick Filter Carousel */}
       <QuickFilterCarousel filters={quickFilters} />
 
-      {/* Product Showcase - Teaser with Locked Prices */}
+      {/* Product Showcase */}
       <section className="py-20 bg-muted/30" data-testid="section-product-showcase">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="text-center mb-6">
-            <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Product Preview</Badge>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Unbeatable Margins on Every Product</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              Source directly from manufacturers. Your customers pay MRP — you keep the massive margins. Here's a sneak peek.
+            <span className="text-sm font-semibold text-primary tracking-wide uppercase">Product Preview</span>
+            <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-4">Unbeatable Margins on Every Product</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
+              Source directly from manufacturers. Your customers pay MRP -- you keep the massive margins.
             </p>
           </div>
 
           <div className="flex items-center justify-center gap-3 mb-10 flex-wrap">
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-2">
+            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full px-4 py-2">
               <TrendingUp className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-semibold text-green-700">Margins up to 5x – 10x – 20x</span>
+              <span className="text-sm font-semibold text-green-700 dark:text-green-400">Margins up to 5x - 10x - 20x</span>
             </div>
-            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-2">
+            <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full px-4 py-2">
               <Package className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-semibold text-blue-700">Only 1 Box MOQ</span>
+              <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">Only 1 Box MOQ</span>
             </div>
           </div>
 
@@ -314,13 +478,15 @@ export default function LandingPage() {
               const catName = categoryMap[product.categoryId] || "";
               const imgSrc = product.image || getProductImage(product.id, catName);
               return (
-                <Card key={product.id} className="overflow-hidden border shadow-sm" data-testid={`product-card-${product.id}`}>
+                <Card key={product.id} className="overflow-hidden border" data-testid={`product-card-${product.id}`}>
                   <div className="relative aspect-square overflow-hidden bg-muted">
                     {imgSrc ? (
                       <img
                         src={imgSrc}
                         alt={product.name}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
@@ -334,7 +500,7 @@ export default function LandingPage() {
                     </div>
                     {product.tags && product.tags.length > 0 && (
                       <div className="absolute top-2 right-2">
-                        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-white/90 text-foreground shadow-sm">
+                        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-white/90 dark:bg-black/70 text-foreground shadow-sm">
                           {product.tags[0]}
                         </Badge>
                       </div>
@@ -343,11 +509,11 @@ export default function LandingPage() {
                   <CardContent className="p-3 md:p-4">
                     <p className="font-semibold text-sm leading-tight mb-2 line-clamp-2" data-testid={`text-product-name-${product.id}`}>{product.name}</p>
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-1">
                         <span className="text-xs text-muted-foreground">MRP</span>
                         <span className="text-sm font-bold" data-testid={`text-product-mrp-${product.id}`}>{formatINR(mrp)}</span>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-1">
                         <span className="text-xs text-muted-foreground">Partner Price</span>
                         <div className="flex items-center gap-1.5" data-testid={`text-product-locked-price-${product.id}`}>
                           <div className="relative">
@@ -357,9 +523,9 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="pt-1.5 border-t mt-1.5">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-1">
                           <span className="text-xs text-muted-foreground">Your Profit</span>
-                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 text-[11px] font-bold px-2" data-testid={`text-product-margin-${product.id}`}>
+                          <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-[11px] font-bold px-2" data-testid={`text-product-margin-${product.id}`}>
                             {marginPercent}% margin
                           </Badge>
                         </div>
@@ -384,12 +550,12 @@ export default function LandingPage() {
 
       {/* Categories Bento Grid */}
       <section className="py-20 bg-background" data-testid="section-categories">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="text-center mb-14">
-            <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Product Categories</Badge>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Categories for Every Store</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              From kitchen essentials to luxury gifting — curate the perfect product mix for your store's target audience.
+            <span className="text-sm font-semibold text-primary tracking-wide uppercase">Product Categories</span>
+            <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-4">Categories for Every Store</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
+              From kitchen essentials to luxury gifting -- curate the perfect product mix for your store.
             </p>
           </div>
 
@@ -406,6 +572,8 @@ export default function LandingPage() {
                     src={cat.image}
                     alt={cat.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
@@ -446,12 +614,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Conversion USP Strip */}
-      <section className="py-14 bg-foreground text-background" data-testid="section-conversion-usps">
-        <div className="container mx-auto px-4 max-w-6xl">
+      {/* Why Choose Us - Stats Strip */}
+      <section className="py-16 bg-[hsl(30,15%,10%)] dark:bg-[hsl(25,15%,6%)]" data-testid="section-conversion-usps">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-4xl font-display font-bold mb-3">Why Partners Choose <span className="text-primary">Eazy to Sell</span></h2>
-            <p className="text-background/60 text-sm md:text-base max-w-xl mx-auto">Product curation expertise that delivers real profits. No guesswork, no risk.</p>
+            <h2 className="text-2xl md:text-4xl font-bold mb-3 text-white">Why Partners Choose <span className="text-primary">Eazy to Sell</span></h2>
+            <p className="text-sm md:text-base max-w-xl mx-auto text-white/50">Product curation expertise that delivers real profits. No guesswork, no risk.</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
             {[
@@ -461,11 +629,11 @@ export default function LandingPage() {
               { value: "Multi", label: "Categories", sub: "Endless variety", icon: Store },
               { value: "5x-20x", label: "Profit Margins", sub: "Direct sourcing", icon: TrendingUp },
             ].map((item) => (
-              <div key={item.label} className="text-center p-4 rounded-xl bg-background/5" data-testid={`conv-usp-${item.label.toLowerCase().replace(/\s/g, "-")}`}>
+              <div key={item.label} className="text-center p-4 rounded-xl bg-white/5" data-testid={`conv-usp-${item.label.toLowerCase().replace(/\s/g, "-")}`}>
                 <item.icon className="h-6 w-6 text-primary mx-auto mb-2" />
-                <div className="text-2xl md:text-3xl font-display font-bold text-primary mb-1">{item.value}</div>
-                <p className="text-sm font-semibold text-background/90">{item.label}</p>
-                <p className="text-xs text-background/50 mt-0.5">{item.sub}</p>
+                <div className="text-2xl md:text-3xl font-bold text-primary mb-1">{item.value}</div>
+                <p className="text-sm font-semibold text-white/90">{item.label}</p>
+                <p className="text-xs mt-0.5 text-white/40">{item.sub}</p>
               </div>
             ))}
           </div>
@@ -474,12 +642,12 @@ export default function LandingPage() {
 
       {/* Bento Showcase Grid */}
       <section className="py-20 bg-background" data-testid="section-showcase">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="text-center mb-14">
-            <Badge variant="outline" className="mb-4 text-sm px-4 py-1">What We Deliver</Badge>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Everything You Need to Succeed</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              From store design to fully stocked shelves — we handle every detail so you can focus on growing your business.
+            <span className="text-sm font-semibold text-primary tracking-wide uppercase">What We Deliver</span>
+            <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-4">Everything You Need to Succeed</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
+              From store design to fully stocked shelves -- we handle every detail so you can focus on growing your business.
             </p>
           </div>
 
@@ -531,42 +699,30 @@ export default function LandingPage() {
 
       {/* 3D Design & Architecture Section */}
       <section className="py-20 bg-muted/30" data-testid="section-3d-design">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Store Design</Badge>
-              <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">We Design Your Store in 3D Before Building It</h2>
-              <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-                Our architectural team creates a complete 3D model of your retail space — optimizing shelf placement, customer flow, and visual merchandising before a single fixture is installed.
+              <span className="text-sm font-semibold text-primary tracking-wide uppercase">Store Design</span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-6">We Design Your Store in 3D Before Building It</h2>
+              <p className="text-muted-foreground text-base md:text-lg mb-8 leading-relaxed">
+                Our architectural team creates a complete 3D model of your retail space -- optimizing shelf placement, customer flow, and visual merchandising before a single fixture is installed.
               </p>
               <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Palette className="h-4 w-4 text-primary" />
+                {[
+                  { title: "Custom Layout Design", desc: "Tailored to your exact store dimensions and area", icon: Palette },
+                  { title: "Optimized Customer Flow", desc: "Maximize footfall-to-purchase conversion", icon: MapPin },
+                  { title: "Visual Merchandising Strategy", desc: "Products placed for maximum appeal and sales", icon: ShoppingBag },
+                ].map((item) => (
+                  <div key={item.title} className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <item.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold">Custom Layout Design</p>
-                    <p className="text-sm text-muted-foreground">Tailored to your exact store dimensions and area</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <MapPin className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Optimized Customer Flow</p>
-                    <p className="text-sm text-muted-foreground">Maximize footfall-to-purchase conversion</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <ShoppingBag className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Visual Merchandising Strategy</p>
-                    <p className="text-sm text-muted-foreground">Products placed for maximum appeal and sales</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
             <div className="space-y-4">
@@ -583,72 +739,30 @@ export default function LandingPage() {
 
       {/* Step by Step Process */}
       <section className="py-20 bg-background" data-testid="section-steps">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Your Journey</Badge>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">From Idea to Grand Opening</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+            <span className="text-sm font-semibold text-primary tracking-wide uppercase">Your Journey</span>
+            <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-4">From Idea to Grand Opening</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
               A proven 6-step process that gets your store open and profitable in under 30 days.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              {
-                step: "01",
-                title: "Sign Up & Consultation",
-                desc: "Tell us about your location, budget, and vision. We'll assess the opportunity together.",
-                icon: Users,
-                color: "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900",
-                iconColor: "text-blue-600",
-              },
-              {
-                step: "02",
-                title: "Location Approval",
-                desc: "Share your store location. Our team evaluates footfall, demographics, and commercial viability.",
-                icon: MapPin,
-                color: "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-900",
-                iconColor: "text-purple-600",
-              },
-              {
-                step: "03",
-                title: "3D Store Design",
-                desc: "Our architects create a complete 3D layout optimized for your exact space and product mix.",
-                icon: Palette,
-                color: "bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-900",
-                iconColor: "text-orange-600",
-              },
-              {
-                step: "04",
-                title: "Select Your Launch Kit",
-                desc: "Browse 35,000+ products, customize your opening inventory, and finalize your investment plan.",
-                icon: Package,
-                color: "bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-900",
-                iconColor: "text-green-600",
-              },
-              {
-                step: "05",
-                title: "Production & Shipping",
-                desc: "We handle sourcing, quality checks, and deliver everything directly to your store location.",
-                icon: Truck,
-                color: "bg-cyan-50 dark:bg-cyan-900/20 border-cyan-100 dark:border-cyan-900",
-                iconColor: "text-cyan-600",
-              },
-              {
-                step: "06",
-                title: "Grand Opening!",
-                desc: "Your store is set up, stocked, and ready for customers. Start selling from day one.",
-                icon: Zap,
-                color: "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-100 dark:border-yellow-900",
-                iconColor: "text-yellow-600",
-              },
+              { step: "01", title: "Sign Up & Consultation", desc: "Tell us about your location, budget, and vision. We'll assess the opportunity together.", icon: Users },
+              { step: "02", title: "Location Approval", desc: "Share your store location. Our team evaluates footfall, demographics, and commercial viability.", icon: MapPin },
+              { step: "03", title: "3D Store Design", desc: "Our architects create a complete 3D layout optimized for your exact space and product mix.", icon: Palette },
+              { step: "04", title: "Select Your Launch Kit", desc: "Browse 35,000+ products, customize your opening inventory, and finalize your investment plan.", icon: Package },
+              { step: "05", title: "Production & Shipping", desc: "We handle sourcing, quality checks, and deliver everything directly to your store location.", icon: Truck },
+              { step: "06", title: "Grand Opening!", desc: "Your store is set up, stocked, and ready for customers. Start selling from day one.", icon: Zap },
             ].map((item) => (
-              <Card key={item.step} className={`${item.color} border`} data-testid={`step-card-${item.step}`}>
+              <Card key={item.step} className="border" data-testid={`step-card-${item.step}`}>
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-4xl font-display font-bold text-muted-foreground/20">{item.step}</span>
-                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${item.iconColor} bg-white dark:bg-black/20 shadow-sm`}>
-                      <item.icon className="h-5 w-5" />
+                  <div className="flex items-center justify-between mb-4 gap-2">
+                    <span className="text-4xl font-bold text-primary/15">{item.step}</span>
+                    <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary/10 shrink-0">
+                      <item.icon className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                   <h3 className="text-lg font-bold mb-2">{item.title}</h3>
@@ -662,19 +776,19 @@ export default function LandingPage() {
 
       {/* Store Exterior + Features */}
       <section className="py-20 bg-muted/30" data-testid="section-features">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="rounded-2xl overflow-hidden shadow-2xl">
               <img src={storeExterior} alt="Store exterior" className="w-full h-auto" loading="lazy" decoding="async" />
             </div>
             <div>
-              <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Why Us</Badge>
-              <h2 className="text-3xl md:text-4xl font-display font-bold mb-8">Everything Is Taken Care Of</h2>
+              <span className="text-sm font-semibold text-primary tracking-wide uppercase">Why Us</span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-8">Everything Is Taken Care Of</h2>
               <div className="space-y-5">
                 {[
                   { title: "Branded Store Identity", desc: "Custom signage, branded interiors, and a professional storefront that builds trust." },
                   { title: "Direct-from-Factory Pricing", desc: "Source products at 40-60% below MRP. Keep the margins that matter." },
-                  { title: "Real-Time Dashboard", desc: "Track sales, inventory, payments, and restocking — all from your phone." },
+                  { title: "Real-Time Dashboard", desc: "Track sales, inventory, payments, and restocking -- all from your phone." },
                   { title: "Dedicated Store Manager Support", desc: "Your personal account manager guides you through every step of the journey." },
                   { title: "Repeat Restock Orders", desc: "One-click reordering for fast-selling items. Never run out of bestsellers." },
                 ].map((feature) => (
@@ -694,11 +808,11 @@ export default function LandingPage() {
 
       {/* Success Stories */}
       <section className="py-20 bg-background" data-testid="section-success-stories">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="text-center mb-14">
-            <Badge variant="outline" className="mb-4 text-sm px-4 py-1">Partner Stories</Badge>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Real Partners, Real Results</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+            <span className="text-sm font-semibold text-primary tracking-wide uppercase">Partner Stories</span>
+            <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-4">Real Partners, Real Results</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
               Meet some of the entrepreneurs who turned their retail dreams into reality with Eazy to Sell.
             </p>
           </div>
@@ -714,19 +828,19 @@ export default function LandingPage() {
                     {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-primary text-primary" />)}
                   </div>
                   <p className="text-muted-foreground mb-4 italic leading-relaxed">
-                    "I invested ₹5L and my store was profitable within the first month. The team handled everything — from design to stocking the shelves. All I had to do was open the doors."
+                    "I invested 5L and my store was profitable within the first month. The team handled everything -- from design to stocking the shelves. All I had to do was open the doors."
                   </p>
                   <div>
                     <p className="font-bold">Rahul Sharma</p>
                     <p className="text-sm text-muted-foreground">Store Owner, Jaipur</p>
                   </div>
-                  <div className="mt-4 pt-4 border-t flex gap-6">
+                  <div className="mt-4 pt-4 border-t flex gap-6 flex-wrap">
                     <div>
-                      <p className="text-xl font-bold text-primary">₹18L</p>
+                      <p className="text-xl font-bold text-primary">18L</p>
                       <p className="text-xs text-muted-foreground">Annual Revenue</p>
                     </div>
                     <div>
-                      <p className="text-xl font-bold text-green-600">48%</p>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">48%</p>
                       <p className="text-xs text-muted-foreground">Profit Margin</p>
                     </div>
                   </div>
@@ -744,19 +858,19 @@ export default function LandingPage() {
                     {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-primary text-primary" />)}
                   </div>
                   <p className="text-muted-foreground mb-4 italic leading-relaxed">
-                    "The 3D design blew me away. I could see exactly how my store would look before anything was built. The product margins are incredible — my customers love the quality and pricing."
+                    "The 3D design blew me away. I could see exactly how my store would look before anything was built. The product margins are incredible -- my customers love the quality and pricing."
                   </p>
                   <div>
                     <p className="font-bold">Priya Patel</p>
                     <p className="text-sm text-muted-foreground">Store Owner, Ahmedabad</p>
                   </div>
-                  <div className="mt-4 pt-4 border-t flex gap-6">
+                  <div className="mt-4 pt-4 border-t flex gap-6 flex-wrap">
                     <div>
-                      <p className="text-xl font-bold text-primary">₹22L</p>
+                      <p className="text-xl font-bold text-primary">22L</p>
                       <p className="text-xs text-muted-foreground">Annual Revenue</p>
                     </div>
                     <div>
-                      <p className="text-xl font-bold text-green-600">52%</p>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">52%</p>
                       <p className="text-xs text-muted-foreground">Profit Margin</p>
                     </div>
                   </div>
@@ -770,11 +884,11 @@ export default function LandingPage() {
       {/* FAQ Section */}
       {faqs.length > 0 && (
         <section className="py-20 bg-muted/30" data-testid="section-faq">
-          <div className="container mx-auto px-4 max-w-3xl">
+          <div className="container mx-auto px-4 md:px-6 max-w-3xl">
             <div className="text-center mb-12">
-              <Badge variant="outline" className="mb-4 text-sm px-4 py-1">FAQs</Badge>
-              <h2 className="text-3xl md:text-4xl font-display font-bold mb-4" data-testid="text-faq-title">Frequently Asked Questions</h2>
-              <p className="text-muted-foreground text-lg">Everything you need to know about partnering with Eazy to Sell</p>
+              <span className="text-sm font-semibold text-primary tracking-wide uppercase">FAQs</span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4" data-testid="text-faq-title">Frequently Asked Questions</h2>
+              <p className="text-muted-foreground text-base md:text-lg">Everything you need to know about partnering with Eazy to Sell</p>
             </div>
             <Accordion type="single" collapsible className="w-full" data-testid="accordion-faq">
               {faqs.map((faq) => (
@@ -798,10 +912,10 @@ export default function LandingPage() {
           <img src={storeInterior1} alt="Store background" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-black/75" />
         </div>
-        <div className="container relative z-10 mx-auto px-4 text-center max-w-3xl">
-          <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-white">Ready to Build Your Retail Empire?</h2>
-          <p className="text-white/70 max-w-2xl mx-auto mb-10 text-lg leading-relaxed">
-            Join 30+ successful retail partners across India. Investment starts at ₹5 Lakhs. Full support from day one to profitability.
+        <div className="container relative z-10 mx-auto px-4 md:px-6 text-center max-w-3xl">
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">Ready to Build Your Retail Empire?</h2>
+          <p className="text-white/70 max-w-2xl mx-auto mb-10 text-base md:text-lg leading-relaxed">
+            Join 30+ successful retail partners across India. Investment starts at 5 Lakhs. Full support from day one to profitability.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/login">
@@ -810,7 +924,7 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/roi-calculator">
-              <Button variant="outline" size="lg" className="h-14 px-10 text-base font-semibold bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 hover:text-white" data-testid="button-cta-roi">
+              <Button variant="outline" size="lg" className="h-14 px-10 text-base font-semibold bg-white/10 backdrop-blur-md border-white/20 text-white" data-testid="button-cta-roi">
                 Calculate Your Returns
               </Button>
             </Link>

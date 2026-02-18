@@ -58,52 +58,52 @@
 }
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 5%;
+  --background: 40 33% 98%;
+  --foreground: 30 10% 8%;
 
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 5%;
-  --card-border: 220 13% 90%;
+  --card-foreground: 30 10% 8%;
+  --card-border: 35 20% 90%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 5%;
-  --popover-border: 220 13% 90%;
+  --popover-foreground: 30 10% 8%;
+  --popover-border: 35 20% 90%;
 
-  --primary: 358 89% 60%;
+  --primary: 32 95% 52%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 45 93% 47%;
-  --secondary-foreground: 0 0% 10%;
+  --secondary: 45 90% 50%;
+  --secondary-foreground: 30 50% 10%;
 
-  --muted: 220 14% 96%;
-  --muted-foreground: 221 11% 50%;
+  --muted: 38 25% 95%;
+  --muted-foreground: 30 10% 45%;
 
-  --accent: 45 93% 52%;
-  --accent-foreground: 0 0% 10%;
+  --accent: 28 100% 55%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 348 84% 49%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 220 13% 90%;
-  --input: 220 13% 90%;
-  --ring: 358 89% 60%;
+  --border: 35 18% 88%;
+  --input: 35 18% 88%;
+  --ring: 32 95% 52%;
 
   --radius: 0.75rem;
 
-  --chart-1: 358 89% 60%;
-  --chart-2: 45 93% 47%;
+  --chart-1: 32 95% 52%;
+  --chart-2: 45 90% 50%;
   --chart-3: 20 90% 55%;
-  --chart-4: 192 100% 60%;
-  --chart-5: 280 65% 55%;
+  --chart-4: 192 80% 50%;
+  --chart-5: 160 60% 45%;
 
-  --sidebar: 220 20% 97%;
-  --sidebar-foreground: 240 10% 30%;
-  --sidebar-primary: 358 89% 60%;
+  --sidebar: 38 30% 97%;
+  --sidebar-foreground: 30 10% 25%;
+  --sidebar-primary: 32 95% 52%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 45 93% 90%;
-  --sidebar-accent-foreground: 0 0% 10%;
-  --sidebar-border: 220 13% 90%;
-  --sidebar-ring: 358 89% 60%;
+  --sidebar-accent: 38 60% 92%;
+  --sidebar-accent-foreground: 30 50% 10%;
+  --sidebar-border: 35 18% 88%;
+  --sidebar-ring: 32 95% 52%;
 
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -136,50 +136,50 @@
 }
 
 .dark {
-  --background: 225 15% 8%;
-  --foreground: 210 20% 92%;
+  --background: 25 15% 8%;
+  --foreground: 35 20% 92%;
 
-  --card: 225 14% 11%;
-  --card-foreground: 210 20% 92%;
-  --card-border: 220 14% 16%;
+  --card: 25 14% 11%;
+  --card-foreground: 35 20% 92%;
+  --card-border: 30 14% 16%;
 
-  --popover: 225 14% 11%;
-  --popover-foreground: 210 20% 92%;
-  --popover-border: 220 14% 16%;
+  --popover: 25 14% 11%;
+  --popover-foreground: 35 20% 92%;
+  --popover-border: 30 14% 16%;
 
-  --primary: 358 89% 60%;
+  --primary: 32 95% 52%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 45 93% 47%;
-  --secondary-foreground: 0 0% 10%;
+  --secondary: 45 90% 50%;
+  --secondary-foreground: 30 50% 10%;
 
-  --muted: 220 14% 14%;
-  --muted-foreground: 220 11% 60%;
+  --muted: 25 14% 14%;
+  --muted-foreground: 30 11% 60%;
 
-  --accent: 45 93% 52%;
-  --accent-foreground: 0 0% 10%;
+  --accent: 28 100% 55%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 348 84% 45%;
+  --destructive: 0 72% 45%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 220 14% 16%;
-  --input: 220 14% 18%;
-  --ring: 358 89% 60%;
+  --border: 30 14% 16%;
+  --input: 30 14% 18%;
+  --ring: 32 95% 52%;
 
-  --chart-1: 358 89% 60%;
-  --chart-2: 45 93% 47%;
+  --chart-1: 32 95% 52%;
+  --chart-2: 45 90% 50%;
   --chart-3: 20 90% 55%;
-  --chart-4: 192 100% 60%;
-  --chart-5: 280 65% 55%;
+  --chart-4: 192 80% 50%;
+  --chart-5: 160 60% 45%;
 
-  --sidebar: 225 14% 11%;
-  --sidebar-foreground: 220 11% 70%;
-  --sidebar-primary: 358 89% 60%;
+  --sidebar: 25 14% 11%;
+  --sidebar-foreground: 30 11% 70%;
+  --sidebar-primary: 32 95% 52%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 14% 16%;
-  --sidebar-accent-foreground: 210 20% 92%;
-  --sidebar-border: 220 14% 16%;
-  --sidebar-ring: 358 89% 60%;
+  --sidebar-accent: 30 14% 16%;
+  --sidebar-accent-foreground: 35 20% 92%;
+  --sidebar-border: 30 14% 16%;
+  --sidebar-ring: 32 95% 52%;
 
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
