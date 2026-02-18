@@ -37,6 +37,8 @@ import AdminPayments from "@/pages/admin/Payments";
 import ClientInvoices from "@/pages/client/Invoices";
 import ClientChecklist from "@/pages/client/Checklist";
 import ClientSupport from "@/pages/client/Support";
+import ClientProfile from "@/pages/client/Profile";
+import OrderTracking from "@/pages/client/OrderTracking";
 
 function Router() {
   return (
@@ -101,6 +103,16 @@ function Router() {
       <Route path="/client/support">
         <DashboardLayout userType="client">
           <ClientSupport />
+        </DashboardLayout>
+      </Route>
+      <Route path="/client/profile">
+        <DashboardLayout userType="client">
+          <ClientProfile />
+        </DashboardLayout>
+      </Route>
+      <Route path="/client/orders">
+        <DashboardLayout userType="client">
+          <OrderTracking />
         </DashboardLayout>
       </Route>
 

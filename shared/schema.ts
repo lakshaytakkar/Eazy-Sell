@@ -139,6 +139,12 @@ export interface Client {
   managerName: string | null;
   managerPhone: string | null;
 
+  gstNumber: string | null;
+  panNumber: string | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankIfsc: string | null;
+
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -185,6 +191,12 @@ export const insertClientSchema = z.object({
   notes: z.string().nullable().optional(),
   managerName: z.string().nullable().optional(),
   managerPhone: z.string().nullable().optional(),
+
+  gstNumber: z.string().nullable().optional(),
+  panNumber: z.string().nullable().optional(),
+  bankName: z.string().nullable().optional(),
+  bankAccountNumber: z.string().nullable().optional(),
+  bankIfsc: z.string().nullable().optional(),
 });
 export type InsertClient = z.infer<typeof insertClientSchema>;
 
@@ -244,6 +256,44 @@ export const insertPaymentSchema = z.object({
   method: z.string().nullable().optional(),
 });
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+
+export const ORDER_STATUSES = [
+  'Order Placed',
+  'Processing',
+  'Shipped',
+  'In Transit',
+  'Delivered',
+] as const;
+
+export interface Order {
+  id: number;
+  clientId: number;
+  orderNumber: string;
+  description: string;
+  items: string | null;
+  carrier: string | null;
+  trackingNumber: string | null;
+  trackingLink: string | null;
+  expectedDelivery: string | null;
+  status: string;
+  notes: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export const insertOrderSchema = z.object({
+  clientId: z.number(),
+  orderNumber: z.string().min(1),
+  description: z.string().min(1),
+  items: z.string().nullable().optional(),
+  carrier: z.string().nullable().optional(),
+  trackingNumber: z.string().nullable().optional(),
+  trackingLink: z.string().nullable().optional(),
+  expectedDelivery: z.string().nullable().optional(),
+  status: z.enum(ORDER_STATUSES).default("Order Placed"),
+  notes: z.string().nullable().optional(),
+});
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
 
 export interface PriceSetting {
   id: number;

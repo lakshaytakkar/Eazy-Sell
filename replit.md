@@ -4,6 +4,9 @@
 Dual-portal web application for retail partnership management. Client portal for retail partners to manage store launch journey (catalog, launch kit, payments). Admin backoffice with CRM (6-factor lead scoring, 9-stage pipeline, drag-and-drop kanban), inventory, kit approvals, WhatsApp templates, and store readiness checklists. V2 price calculator engine. V3 adds CRM upgrade, public qualification form, readiness checklists, timeline tracking, WhatsApp templates, enhanced ROI calculator, FAQ, and program scope page.
 
 ## Recent Changes
+- Feb 18, 2026: My Profile page at /client/profile - editable personal info, store details, business info (GST/PAN/bank), program status sidebar, form validation for GST/PAN/IFSC formats.
+- Feb 18, 2026: Order Tracking page at /client/orders - shipment timeline stepper (Order Placed→Delivered), tracking numbers with links, carrier info, expected delivery countdown, active/delivered sections.
+- Feb 18, 2026: Added client fields: gst_number, pan_number, bank_name, bank_account_number, bank_ifsc. Added orders table with status validation.
 - Feb 17, 2026: V3 CRM Upgrade - 9-stage pipeline (New Inquiry→Launched/Lost), 6-factor lead scoring (Budget/Location/Operator/Timeline/Experience/Engagement rated 1-3), auto-calculated total score with Hot/Warm/Nurture badges, package tiers (Lite/Pro/Elite), enhanced kanban with drag-and-drop and score filter.
 - Feb 17, 2026: Public qualification form at /qualify - 4-section wizard (Basic/Business/Location/Expectations), auto lead-scoring from answers, creates client record, thank-you screen with confetti animation.
 - Feb 17, 2026: Store readiness checklist - 44 items across 7 categories (Infrastructure/Fixtures/Inventory/Billing/Staff/Legal/Launch Prep) in ClientDetail tab, per-client toggle with completion percentage.
@@ -34,7 +37,7 @@ Dual-portal web application for retail partnership management. Client portal for
 - **Storage**: DatabaseStorage class in server/storage.ts (camelCase↔snake_case conversion, auto price/score calculation)
 - **Styling**: client/src/index.css with custom design tokens
 - **Assets**: client/src/assets/images/ (must be imported as JS variables, not URL paths)
-- **DB Tables**: users, categories, products, clients, launch_kit_items, launch_kit_submissions, payments, price_settings, readiness_checklist_items, readiness_checklist_status, whatsapp_templates, faq_items
+- **DB Tables**: users, categories, products, clients, launch_kit_items, launch_kit_submissions, payments, orders, price_settings, readiness_checklist_items, readiness_checklist_status, whatsapp_templates, faq_items
 
 ## CRM & Lead Scoring
 - Pipeline stages: New Inquiry → Qualification Sent → Discovery Call → Proposal Sent → Negotiation → Token Paid → In Execution → Launched → Lost
@@ -72,6 +75,7 @@ Dual-portal web application for retail partnership management. Client portal for
 - GET /api/templates - WhatsApp message templates
 - GET /api/faqs - FAQ items
 - GET/POST /api/kit-items/:clientId, /api/submissions, /api/payments
+- GET /api/orders/:clientId, POST /api/orders, PATCH /api/orders/:id - Order tracking CRUD
 - POST /api/seed - Seeds initial data with EXW pricing
 - GET/POST /api/settings - Price settings CRUD
 - GET /api/settings/map - Settings as key-value map

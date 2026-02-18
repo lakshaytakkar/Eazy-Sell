@@ -8,6 +8,7 @@ import type {
   LaunchKitItem, InsertLaunchKitItem,
   LaunchKitSubmission, InsertLaunchKitSubmission,
   Payment, InsertPayment,
+  Order, InsertOrder,
   PriceSetting, InsertPriceSetting,
   ReadinessChecklistItem,
   ReadinessChecklistStatus,
@@ -85,6 +86,11 @@ export interface IStorage {
   recalculateProduct(productId: number): Promise<Product | undefined>;
   recalculateAllProducts(): Promise<number>;
   recalculateCategoryProducts(categoryId: number): Promise<number>;
+
+  getOrdersByClient(clientId: number): Promise<Order[]>;
+  getOrder(id: number): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
 
   getChecklistItems(): Promise<ReadinessChecklistItem[]>;
   getChecklistStatus(clientId: number): Promise<ReadinessChecklistStatus[]>;
@@ -454,6 +460,30 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return count;
+  }
+
+  async getOrdersByClient(clientId: number): Promise<Order[]> {
+    const { data, error } = await supabase.from("orders").select("*").eq("client_id", clientId).order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(snakeToCamel);
+  }
+
+  async getOrder(id: number): Promise<Order | undefined> {
+    const { data } = await supabase.from("orders").select("*").eq("id", id).single();
+    return data ? snakeToCamel(data) : undefined;
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const { data, error } = await supabase.from("orders").insert(camelToSnake(order)).select().single();
+    if (error) throw new Error(error.message);
+    return snakeToCamel(data);
+  }
+
+  async updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined> {
+    const updateData = { ...order, updatedAt: new Date().toISOString() };
+    const { data, error } = await supabase.from("orders").update(camelToSnake(updateData)).eq("id", id).select().single();
+    if (error) return undefined;
+    return snakeToCamel(data);
   }
 
   async getChecklistItems(): Promise<ReadinessChecklistItem[]> {

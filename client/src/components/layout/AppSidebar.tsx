@@ -29,7 +29,9 @@ import {
   ClipboardCheck,
   MessageSquare,
   IndianRupee,
-  LifeBuoy
+  LifeBuoy,
+  UserCircle,
+  Truck,
 } from "lucide-react";
 
 const clientNavGroups = [
@@ -41,6 +43,7 @@ const clientNavGroups = [
       { label: "My Launch Kit", href: "/client/launch-kit", icon: Package },
       { label: "My Store", href: "/client/store", icon: Store },
       { label: "Readiness Checklist", href: "/client/checklist", icon: ClipboardCheck },
+      { label: "Order Tracking", href: "/client/orders", icon: Truck },
     ],
   },
   {
@@ -51,8 +54,9 @@ const clientNavGroups = [
     ],
   },
   {
-    label: "HELP",
+    label: "ACCOUNT",
     items: [
+      { label: "My Profile", href: "/client/profile", icon: UserCircle },
       { label: "Support", href: "/client/support", icon: LifeBuoy },
     ],
   },

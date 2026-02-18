@@ -8,6 +8,7 @@ import {
   insertLaunchKitItemSchema,
   insertLaunchKitSubmissionSchema,
   insertPaymentSchema,
+  insertOrderSchema,
   insertPriceSettingSchema,
   qualificationFormSchema,
 } from "@shared/schema";
@@ -314,6 +315,26 @@ export async function registerRoutes(
     const pay = await storage.updatePayment(Number(req.params.id), req.body);
     if (!pay) return res.status(404).json({ error: "Not found" });
     res.json(pay);
+  });
+
+  app.get("/api/orders/:clientId", async (req, res) => {
+    const orders = await storage.getOrdersByClient(Number(req.params.clientId));
+    res.json(orders);
+  });
+
+  app.post("/api/orders", async (req, res) => {
+    const parsed = insertOrderSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+    const order = await storage.createOrder(parsed.data);
+    res.status(201).json(order);
+  });
+
+  app.patch("/api/orders/:id", async (req, res) => {
+    const partial = insertOrderSchema.partial().safeParse(req.body);
+    if (!partial.success) return res.status(400).json({ error: partial.error.message });
+    const order = await storage.updateOrder(Number(req.params.id), partial.data);
+    if (!order) return res.status(404).json({ error: "Not found" });
+    res.json(order);
   });
 
   app.get("/api/settings", async (_req, res) => {
