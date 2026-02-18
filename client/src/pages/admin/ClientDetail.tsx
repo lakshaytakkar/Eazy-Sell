@@ -93,6 +93,14 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
+function SlackIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+    </svg>
+  );
+}
+
 function GmailIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -229,6 +237,8 @@ export default function ClientDetail() {
   const cleanAddress = client.storeAddress
     ?.replace(/https?:\/\/[^\s]+/g, "")
     .trim();
+
+  const slackChannelUrl = "https://suprans.slack.com/archives/C0AFN14THEE";
 
   const whatsappNumber = client.phone?.replace(/[^0-9]/g, "") || "";
   const whatsappUrl = whatsappNumber
@@ -387,10 +397,20 @@ export default function ClientDetail() {
                       className="border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 hover:text-[#128C7E]"
                       data-testid="button-whatsapp"
                     >
-                      <WhatsAppIcon className="h-4 w-4 mr-1.5" /> WhatsApp
+                      <WhatsAppIcon className="h-4 w-4 mr-1.5" /> Chat on WhatsApp
                     </Button>
                   </a>
                 )}
+                <a href={slackChannelUrl} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#4A154B]/30 bg-[#4A154B]/10 text-[#4A154B] dark:border-[#E01E5A]/30 dark:bg-[#E01E5A]/10 dark:text-[#E01E5A]"
+                    data-testid="button-slack"
+                  >
+                    <SlackIcon className="h-4 w-4 mr-1.5" /> Chat on Slack
+                  </Button>
+                </a>
                 {client.email && (
                   <a href={`mailto:${client.email}`}>
                     <Button
@@ -437,10 +457,19 @@ export default function ClientDetail() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <MessageSquare className="h-4 w-4 mr-2" /> Send Template Message
+                          <WhatsAppIcon className="h-4 w-4 mr-2" /> Send WhatsApp Message
                         </a>
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={slackChannelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <SlackIcon className="h-4 w-4 mr-2" /> Open Slack Channel
+                      </a>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => toast({ title: "Coming soon", description: "Client editing will be available shortly." })}
