@@ -90,7 +90,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
           <div className="flex items-center gap-6">
             <Link href="/client/dashboard">
               <div className="flex items-center gap-2 cursor-pointer shrink-0" data-testid="link-home">
-                <img src="/logo.png" alt="Eazy to Sell" className="h-9 w-auto object-contain" loading="eager" />
+                <img src="/logo.png" alt="Eazy to Sell" className="h-12 w-auto object-contain" loading="eager" />
               </div>
             </Link>
 
