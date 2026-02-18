@@ -510,7 +510,25 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {(products.length > 0 ? products.slice(0, 8) : []).map((product) => {
+            {(() => {
+              const withImages = products.filter(p => p.image);
+              const seen = new Set<number>();
+              const diverse: typeof products = [];
+              for (const p of withImages) {
+                if (!seen.has(p.categoryId)) {
+                  diverse.push(p);
+                  seen.add(p.categoryId);
+                }
+                if (diverse.length >= 8) break;
+              }
+              if (diverse.length < 8) {
+                for (const p of withImages) {
+                  if (!diverse.includes(p)) diverse.push(p);
+                  if (diverse.length >= 8) break;
+                }
+              }
+              return diverse.length > 0 ? diverse : products.slice(0, 8);
+            })().map((product) => {
               const price = getProductPrice(product);
               const mrp = getProductMrp(product);
               const marginMultiplier = getMarginMultiplier(price, mrp);
