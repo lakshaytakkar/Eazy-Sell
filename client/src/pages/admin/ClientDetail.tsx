@@ -93,14 +93,6 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-function SlackIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
-    </svg>
-  );
-}
-
 function GmailIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -237,8 +229,6 @@ export default function ClientDetail() {
   const cleanAddress = client.storeAddress
     ?.replace(/https?:\/\/[^\s]+/g, "")
     .trim();
-
-  const slackChannelUrl = "https://suprans.slack.com/archives/C0AFN14THEE";
 
   const whatsappNumber = client.phone?.replace(/[^0-9]/g, "") || "";
   const whatsappUrl = whatsappNumber
@@ -401,16 +391,6 @@ export default function ClientDetail() {
                     </Button>
                   </a>
                 )}
-                <a href={slackChannelUrl} target="_blank" rel="noopener noreferrer">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-[#4A154B]/30 bg-[#4A154B]/10 text-[#4A154B] dark:border-[#E01E5A]/30 dark:bg-[#E01E5A]/10 dark:text-[#E01E5A]"
-                    data-testid="button-slack"
-                  >
-                    <SlackIcon className="h-4 w-4 mr-1.5" /> Chat on Slack
-                  </Button>
-                </a>
                 {client.email && (
                   <a href={`mailto:${client.email}`}>
                     <Button
@@ -461,15 +441,6 @@ export default function ClientDetail() {
                         </a>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem asChild>
-                      <a
-                        href={slackChannelUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <SlackIcon className="h-4 w-4 mr-2" /> Open Slack Channel
-                      </a>
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => toast({ title: "Coming soon", description: "Client editing will be available shortly." })}
@@ -631,36 +602,40 @@ export default function ClientDetail() {
             </Card>
           )}
 
-          <Card className="border rounded-2xl shadow-sm">
-            <CardContent className="p-5 space-y-4">
-              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <ChevronDown className="h-4 w-4 text-primary" /> Stage Management
-              </h3>
-              <div className="flex flex-wrap gap-1.5">
-                {PIPELINE_STAGES.map((stage, i) => (
-                  <Badge
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">Pipeline Stage</p>
+            <div className="flex gap-1 w-full overflow-x-auto pb-1" data-testid="stage-pipeline-strip">
+              {PIPELINE_STAGES.map((stage, i) => {
+                const isCurrent = client.stage === stage;
+                const isPast = i < currentStageIndex;
+                const isLost = stage === "Lost";
+                return (
+                  <button
                     key={stage}
-                    variant="outline"
-                    className={`text-[10px] cursor-pointer transition-all ${
-                      client.stage === stage
-                        ? (stageColors[stage] || "") + " ring-2 ring-primary/20 font-semibold"
-                        : i <= currentStageIndex
-                          ? "opacity-50 hover:opacity-80"
-                          : "opacity-30 hover:opacity-60"
-                    }`}
                     onClick={() => {
                       if (stage !== client.stage) {
                         updateStageMutation.mutate(stage);
                       }
                     }}
+                    className={`flex-1 min-w-0 py-2 px-1.5 rounded-full text-xs font-medium text-center whitespace-nowrap transition-all cursor-pointer ${
+                      isCurrent
+                        ? isLost
+                          ? "bg-red-500 text-white ring-2 ring-red-300 dark:ring-red-700"
+                          : "bg-primary text-primary-foreground ring-2 ring-primary/30"
+                        : isPast
+                          ? "bg-primary/15 text-primary dark:bg-primary/25"
+                          : isLost
+                            ? "bg-muted text-muted-foreground/60"
+                            : "bg-muted text-muted-foreground/60"
+                    }`}
                     data-testid={`stage-badge-${stage.replace(/\s+/g, "-").toLowerCase()}`}
                   >
                     {stage}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {(client.managerName || client.managerPhone) && (
             <Card className="border rounded-2xl shadow-sm">
