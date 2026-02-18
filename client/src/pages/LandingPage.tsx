@@ -642,7 +642,7 @@ export default function LandingPage() {
                 You bring the ambition. Launch a fully stocked, beautifully designed store in under 30 days.
               </p>
 
-              <div className="relative w-full">
+              <div className="relative w-[150%] -ml-4">
                 <img
                   src="/hero-store.png"
                   alt="Pikko franchise store with panda mascot"
@@ -673,7 +673,7 @@ export default function LandingPage() {
                     fill="hsl(32 95% 52%)"
                   />
                   <text
-                    x="163"
+                    x="178"
                     y="18"
                     textAnchor="end"
                     className="fill-primary"
@@ -682,7 +682,7 @@ export default function LandingPage() {
                     Your
                   </text>
                   <text
-                    x="168"
+                    x="180"
                     y="40"
                     textAnchor="end"
                     className="fill-primary"
