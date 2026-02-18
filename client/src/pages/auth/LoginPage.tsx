@@ -5,22 +5,18 @@ import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Eye, EyeOff, Store, Shield } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Store, Shield, Phone } from "lucide-react";
 import loginStoreHero from "@/assets/images/login-store-hero.png";
 
 export default function LoginPage() {
   const [_, setLocation] = useLocation();
-  const { login, signup, user } = useAuth();
+  const { login, user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [city, setCity] = useState("");
-  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -35,23 +31,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      if (mode === "login") {
-        const result = await login(email, password);
-        toast({ title: "Welcome back!", description: `Signed in as ${result.user.name}` });
-        setLocation(result.role === "admin" ? "/admin/dashboard" : "/client/dashboard");
-      } else {
-        if (!name || !city) {
-          toast({ title: "Missing fields", description: "Please fill in all required fields", variant: "destructive" });
-          setIsLoading(false);
-          return;
-        }
-        const result = await signup({ email, password, name, city, phone });
-        toast({ title: "Account created!", description: "Welcome to Eazy to Sell" });
-        setLocation("/client/dashboard");
-      }
+      const result = await login(email, password);
+      toast({ title: "Welcome back!", description: `Signed in as ${result.user.name}` });
+      setLocation(result.role === "admin" ? "/admin/dashboard" : "/client/dashboard");
     } catch (err: any) {
       toast({
-        title: mode === "login" ? "Login failed" : "Signup failed",
+        title: "Login failed",
         description: err.message,
         variant: "destructive",
       });
@@ -108,59 +93,15 @@ export default function LoginPage() {
         <div className="w-full max-w-[400px] space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
           <div className="space-y-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground" data-testid="text-auth-title">
-              {mode === "login" ? "Sign in to your account" : "Create your account"}
+              Partner Login
             </h1>
             <p className="text-muted-foreground text-sm">
-              {mode === "login"
-                ? "Enter your credentials to access the portal."
-                : "Fill in your details to get started as a partner."}
+              Enter your credentials to access the partner portal.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              {mode === "signup" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Rahul Sharma"
-                      className="h-10"
-                      required
-                      data-testid="input-name"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="Jaipur"
-                        className="h-10"
-                        required
-                        data-testid="input-city"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
-                        className="h-10"
-                        data-testid="input-phone"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -184,7 +125,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     className="h-10 pr-10"
                     required
                     minLength={6}
@@ -209,20 +150,20 @@ export default function LoginPage() {
                 disabled={isLoading}
                 data-testid="button-submit-auth"
               >
-                {isLoading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
+                {isLoading ? "Please wait..." : "Sign In"}
                 {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </form>
 
-          <div className="text-center space-y-3">
-            <button
-              onClick={() => setMode(mode === "login" ? "signup" : "login")}
-              className="text-sm text-primary hover:underline font-medium"
-              data-testid="button-toggle-mode"
-            >
-              {mode === "login" ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-            </button>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <p className="text-xs text-muted-foreground leading-relaxed" data-testid="text-credentials-note">
+              Login credentials are provided by our team after your application is reviewed. If you haven't received yours yet, please contact us:
+            </p>
+            <a href="tel:+919306566900" className="inline-flex items-center gap-2 text-primary font-semibold text-sm" data-testid="link-phone-login">
+              <Phone className="h-3.5 w-3.5" />
+              +91 93065 66900
+            </a>
           </div>
 
           <p className="text-center text-xs text-muted-foreground">

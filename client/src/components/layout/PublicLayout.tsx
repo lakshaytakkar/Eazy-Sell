@@ -85,13 +85,8 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" data-testid="button-nav-login">
-                    Log In
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button data-testid="button-nav-get-started">
-                    Get Started
+                  <Button data-testid="button-nav-login">
+                    Partner Login
                   </Button>
                 </Link>
               </>
@@ -137,7 +132,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               ) : (
                 <Link href="/login">
                   <Button className="w-full" onClick={() => setMobileOpen(false)} data-testid="button-mobile-login">
-                    Log In / Sign Up
+                    Partner Login
                   </Button>
                 </Link>
               )}

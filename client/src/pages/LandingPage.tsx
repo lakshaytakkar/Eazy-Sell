@@ -223,24 +223,33 @@ function HeroRegistrationForm() {
   const onSubmit = (data: QualificationFormData) => mutation.mutate(data);
 
   if (submitted) {
+    const refNumber = `ETS-${Date.now().toString(36).toUpperCase()}`;
     return (
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 md:p-8 lg:p-10 w-full text-center flex flex-col justify-center" data-testid="form-hero-success">
-        <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Check className="h-7 w-7 text-primary" />
+      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-5 md:p-6 lg:p-8 w-full text-center flex flex-col justify-center h-full" data-testid="form-hero-success">
+        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-5">
+          <Check className="h-8 w-8 text-primary" />
         </div>
-        <h3 className="text-xl font-bold text-foreground mb-2" data-testid="text-success-title">Application Submitted</h3>
-        <p className="text-sm text-muted-foreground mb-6" data-testid="text-success-message">
-          Thank you for your interest. Our team will connect with you within 24 hours.
+        <h3 className="text-xl font-bold text-foreground mb-2" data-testid="text-success-title">Thank You!</h3>
+        <p className="text-sm text-muted-foreground mb-4" data-testid="text-success-message">
+          Your enquiry has been submitted successfully. Our team will review your details and reach out within 24 hours.
         </p>
-        <Link href={isLoggedIn ? dashboardHref : "/login"}>
-          <Button className="w-full" data-testid="button-success-login">
-            {isLoggedIn ? (
-              <><LayoutDashboard className="h-4 w-4 mr-2" /> My Dashboard</>
-            ) : (
-              "Go to Login"
-            )}
-          </Button>
-        </Link>
+
+        <div className="bg-muted/50 rounded-lg p-4 mb-5">
+          <p className="text-xs text-muted-foreground mb-1">Your Reference Number</p>
+          <p className="text-lg font-bold text-foreground tracking-wide" data-testid="text-ref-number">{refNumber}</p>
+        </div>
+
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-5">
+          <p className="text-xs text-muted-foreground mb-2">Want to speak with us directly?</p>
+          <a href="tel:+919306566900" className="inline-flex items-center gap-2 text-primary font-semibold text-base" data-testid="link-phone">
+            <Phone className="h-4 w-4" />
+            +91 93065 66900
+          </a>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed" data-testid="text-login-note">
+          A team member will review your application and assign you login credentials to access the partner portal.
+        </p>
       </div>
     );
   }
@@ -248,13 +257,13 @@ function HeroRegistrationForm() {
   const watchHasLocation = form.watch("hasLocation");
 
   return (
-    <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 md:p-8 lg:p-10 w-full flex flex-col justify-center" data-testid="form-hero-registration">
-      <div className="mb-4">
-        <h3 className="text-2xl font-bold text-foreground mb-1">Start Your Store</h3>
+    <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-5 md:p-6 lg:p-8 w-full flex flex-col h-full" data-testid="form-hero-registration">
+      <div className="mb-3">
+        <h3 className="text-xl font-bold text-foreground mb-1">Start Your Store</h3>
         <p className="text-sm text-muted-foreground">Step {step} of 4 &mdash; {STEP_LABELS[step - 1]}</p>
       </div>
 
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2 mb-4">
         {[1, 2, 3, 4].map((s) => (
           <div key={s} className="flex-1">
             <div className={`h-1.5 rounded-full transition-colors ${s <= step ? "bg-primary" : "bg-border"}`} data-testid={`progress-step-${s}`} />
@@ -661,52 +670,11 @@ export default function LandingPage() {
               <div className="relative w-full flex-1 min-h-0">
                 <img
                   src="/hero-store.png"
-                  alt="Pikko franchise store with panda mascot"
+                  alt="Retail store interior"
                   className="w-full h-full object-cover object-top rounded-r-xl"
                   loading="eager"
                   data-testid="img-hero-store"
                 />
-                <svg
-                  viewBox="0 0 180 110"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="absolute pointer-events-none select-none w-32 md:w-[166px]"
-                  style={{ top: "-10%", right: "calc(-10% - 60px)" }}
-                  aria-hidden="true"
-                  data-testid="svg-curvy-arrow"
-                >
-                  <path
-                    d="M160 10 C140 8, 100 5, 70 30 C40 55, 50 75, 55 90"
-                    stroke="hsl(32 95% 52%)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                    style={{ strokeDasharray: 200, strokeDashoffset: 0 }}
-                  />
-                  <polygon
-                    points="48,88 55,100 62,88"
-                    fill="hsl(32 95% 52%)"
-                  />
-                  <text
-                    x="178"
-                    y="18"
-                    textAnchor="end"
-                    className="fill-primary"
-                    style={{ fontFamily: "'Caveat', 'Segoe Script', cursive", fontSize: "22px", fontWeight: 700 }}
-                  >
-                    Your
-                  </text>
-                  <text
-                    x="180"
-                    y="40"
-                    textAnchor="end"
-                    className="fill-primary"
-                    style={{ fontFamily: "'Caveat', 'Segoe Script', cursive", fontSize: "22px", fontWeight: 700 }}
-                  >
-                    Store!
-                  </text>
-                </svg>
               </div>
             </div>
 
@@ -863,10 +831,10 @@ export default function LandingPage() {
               <>
                 <Link href="/login">
                   <Button size="lg" className="h-12 px-8 text-sm font-semibold shadow-lg" data-testid="button-unlock-catalog">
-                    <Lock className="h-4 w-4 mr-2" /> Sign Up to Unlock Full Catalog & Prices
+                    <Lock className="h-4 w-4 mr-2" /> Login to View Full Catalog & Prices
                   </Button>
                 </Link>
-                <p className="text-xs text-muted-foreground mt-3">35,000+ products across multiple categories. Partner pricing revealed after sign-up.</p>
+                <p className="text-xs text-muted-foreground mt-3">35,000+ products across multiple categories. Partner pricing revealed after login.</p>
               </>
             )}
           </div>
@@ -1252,7 +1220,7 @@ export default function LandingPage() {
             ) : (
               <Link href="/login">
                 <Button size="lg" className="h-14 px-10 text-base font-semibold shadow-xl" data-testid="button-cta-start">
-                  Create Partner Account <ArrowRight className="h-5 w-5 ml-2" />
+                  Partner Login <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
               </Link>
             )}
