@@ -410,6 +410,46 @@ export default function LandingPage() {
                   loading="eager"
                   data-testid="img-hero-store"
                 />
+                <svg
+                  viewBox="0 0 180 110"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="absolute -top-8 -right-4 md:-right-10 w-32 md:w-44 pointer-events-none select-none"
+                  aria-hidden="true"
+                  data-testid="svg-curvy-arrow"
+                >
+                  <path
+                    d="M160 10 C140 8, 100 5, 70 30 C40 55, 50 75, 55 90"
+                    stroke="hsl(32 95% 52%)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                    style={{ strokeDasharray: 200, strokeDashoffset: 0 }}
+                  />
+                  <polygon
+                    points="48,88 55,100 62,88"
+                    fill="hsl(32 95% 52%)"
+                  />
+                  <text
+                    x="163"
+                    y="18"
+                    textAnchor="end"
+                    className="fill-primary"
+                    style={{ fontFamily: "'Caveat', 'Segoe Script', cursive", fontSize: "22px", fontWeight: 700 }}
+                  >
+                    Your
+                  </text>
+                  <text
+                    x="168"
+                    y="40"
+                    textAnchor="end"
+                    className="fill-primary"
+                    style={{ fontFamily: "'Caveat', 'Segoe Script', cursive", fontSize: "22px", fontWeight: 700 }}
+                  >
+                    Store!
+                  </text>
+                </svg>
               </div>
             </div>
 
