@@ -1,7 +1,8 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, ArrowUp } from "lucide-react";
+import { Menu, X, ArrowUp, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -9,6 +10,9 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children }: PublicLayoutProps) {
   const [location] = useLocation();
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+  const dashboardHref = user?.role === "admin" ? "/admin/dashboard" : "/client/dashboard";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -71,16 +75,27 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" data-testid="button-nav-login">
-                Log In
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button data-testid="button-nav-get-started">
-                Get Started
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <Link href={dashboardHref}>
+                <Button data-testid="button-nav-dashboard">
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  My Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" data-testid="button-nav-login">
+                    Log In
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button data-testid="button-nav-get-started">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           <Button
@@ -112,11 +127,20 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                 </Link>
               ))}
               <div className="h-px bg-border my-2" />
-              <Link href="/login">
-                <Button className="w-full" onClick={() => setMobileOpen(false)} data-testid="button-mobile-login">
-                  Log In / Sign Up
-                </Button>
-              </Link>
+              {isLoggedIn ? (
+                <Link href={dashboardHref}>
+                  <Button className="w-full" onClick={() => setMobileOpen(false)} data-testid="button-mobile-dashboard">
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    My Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/login">
+                  <Button className="w-full" onClick={() => setMobileOpen(false)} data-testid="button-mobile-login">
+                    Log In / Sign Up
+                  </Button>
+                </Link>
+              )}
             </nav>
           </div>
         )}

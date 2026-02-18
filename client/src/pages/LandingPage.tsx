@@ -12,8 +12,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { qualificationFormSchema, type QualificationFormData } from "@shared/schema";
-import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight, ChevronLeft, Phone, User, Mail, Building2, Check } from "lucide-react";
+import { ArrowRight, Store, TrendingUp, Package, Truck, Palette, CheckCircle2, MapPin, Star, Users, ShoppingBag, Zap, Lock, Shield, Layers, ChevronRight, ChevronLeft, Phone, User, Mail, Building2, Check, LayoutDashboard } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -160,6 +161,9 @@ function HeroRegistrationForm() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+  const dashboardHref = user?.role === "admin" ? "/admin/dashboard" : "/client/dashboard";
 
   const form = useForm<QualificationFormData>({
     resolver: zodResolver(qualificationFormSchema),
@@ -228,8 +232,14 @@ function HeroRegistrationForm() {
         <p className="text-sm text-muted-foreground mb-6" data-testid="text-success-message">
           Thank you for your interest. Our team will connect with you within 24 hours.
         </p>
-        <Link href="/login">
-          <Button className="w-full" data-testid="button-success-login">Go to Login</Button>
+        <Link href={isLoggedIn ? dashboardHref : "/login"}>
+          <Button className="w-full" data-testid="button-success-login">
+            {isLoggedIn ? (
+              <><LayoutDashboard className="h-4 w-4 mr-2" /> My Dashboard</>
+            ) : (
+              "Go to Login"
+            )}
+          </Button>
         </Link>
       </div>
     );
@@ -599,6 +609,10 @@ function QuickFilterCarousel({ filters }: { filters: { label: string; image: str
 }
 
 export default function LandingPage() {
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+  const dashboardHref = user?.role === "admin" ? "/admin/dashboard" : "/client/dashboard";
+
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
@@ -839,12 +853,22 @@ export default function LandingPage() {
           </div>
 
           <div className="text-center mt-10">
-            <Link href="/login">
-              <Button size="lg" className="h-12 px-8 text-sm font-semibold shadow-lg" data-testid="button-unlock-catalog">
-                <Lock className="h-4 w-4 mr-2" /> Sign Up to Unlock Full Catalog & Prices
-              </Button>
-            </Link>
-            <p className="text-xs text-muted-foreground mt-3">35,000+ products across multiple categories. Partner pricing revealed after sign-up.</p>
+            {isLoggedIn ? (
+              <Link href={dashboardHref}>
+                <Button size="lg" className="h-12 px-8 text-sm font-semibold shadow-lg" data-testid="button-unlock-catalog">
+                  <LayoutDashboard className="h-4 w-4 mr-2" /> My Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button size="lg" className="h-12 px-8 text-sm font-semibold shadow-lg" data-testid="button-unlock-catalog">
+                    <Lock className="h-4 w-4 mr-2" /> Sign Up to Unlock Full Catalog & Prices
+                  </Button>
+                </Link>
+                <p className="text-xs text-muted-foreground mt-3">35,000+ products across multiple categories. Partner pricing revealed after sign-up.</p>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -1219,11 +1243,19 @@ export default function LandingPage() {
             Join 30+ successful retail partners across India. Investment starts at 5 Lakhs. Full support from day one to profitability.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/login">
-              <Button size="lg" className="h-14 px-10 text-base font-semibold shadow-xl" data-testid="button-cta-start">
-                Create Partner Account <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <Link href={dashboardHref}>
+                <Button size="lg" className="h-14 px-10 text-base font-semibold shadow-xl" data-testid="button-cta-start">
+                  <LayoutDashboard className="h-5 w-5 mr-2" /> My Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <Button size="lg" className="h-14 px-10 text-base font-semibold shadow-xl" data-testid="button-cta-start">
+                  Create Partner Account <ArrowRight className="h-5 w-5 ml-2" />
+                </Button>
+              </Link>
+            )}
             <Link href="/roi-calculator">
               <Button variant="outline" size="lg" className="h-14 px-10 text-base font-semibold bg-white/10 backdrop-blur-md border-white/20 text-white" data-testid="button-cta-roi">
                 Calculate Your Returns
