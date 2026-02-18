@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Eye, EyeOff, Store, Shield } from "lucide-react";
+import storeInterior from "@/assets/images/store-interior.png";
 
 export default function LoginPage() {
   const [_, setLocation] = useLocation();
@@ -61,12 +62,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-zinc-900 text-white overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-20">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-transparent to-yellow-500/20" />
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl" />
-        </div>
+      <div className="relative hidden lg:flex flex-col justify-between p-12 text-white overflow-hidden">
+        <img
+          src={storeInterior}
+          alt="Inside a value retail store"
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          decoding="sync"
+          fetchPriority="high"
+          data-testid="img-login-store"
+        />
+        <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
 
         <div className="relative z-10">
           <img src="/logo.png" alt="Eazy to Sell" className="h-16 w-auto object-contain" loading="eager" />
